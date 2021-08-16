@@ -1,0 +1,19 @@
+{
+  "name": "counter",
+  "version": "1.0.0",
+  "license": "MIT",
+  "devDependencies": {
+    "shadow-cljs": "^2.10.6"
+  },
+  "scripts": {
+    "start": "npx shadow-cljs watch app"
+  },
+  "dependencies": {
+    "@webgpu/glslang": "^0.0.15",
+    "kaboom": "^0.5.1",
+    "matter-js": "^0.17.1",
+    "pako": "^2.0.4",
+    "react": "16.13.0",
+    "react-dom": "16.13.0"
+  }
+}
