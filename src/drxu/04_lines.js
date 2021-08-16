@@ -44,7 +44,7 @@ const CreatePrimitive = async ({ primitiveType = "point-list", canvas }) => {
   // const canvas = document.getElementById("canvas-webgpu");
   const adapter = await navigator.gpu.requestAdapter();
   const device = await adapter.requestDevice();
-  const context = canvas.getContext("gpupresent");
+  const context = canvas.getContext("webgpu");
 
   const format = "bgra8unorm";
   context.configure({

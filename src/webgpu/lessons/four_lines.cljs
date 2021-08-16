@@ -13,9 +13,17 @@
 (comment
   (create-primitive {:canvas (js/document.getElementById "app")
                      :primitive-tive "point-list"})
+  (create-primitive {:canvas (js/document.getElementById "app")
+                     :primitive-type "line-list"})
+  (create-primitive {:canvas (js/document.getElementById "app")
+                     :primitive-type "line-strip"})
+
   (shaders "(0,0,0,1"))
 
 ;; app
 (defn app []
   (create-primitive {:canvas (js/document.getElementById "app")
                      :primitive-type "point-list"}))
+
+(comment
+  (create-primitive))
