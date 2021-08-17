@@ -12,18 +12,33 @@ makeGlobal.doc = `Makes properties of the input object global for enabling REPLI
    console.log(window.jon) => "jon snow"
 `.split("\n");
 
+makeGlobal.src = `
+export const makeGlobal = obj => {
+  for (const apiName in obj) {
+    window[apiName] = obj[apiName];
+  }
+};
+`.split("\n");
+
 export const createGPUBuffer = (
-  device,
-  input,
+  device, // WebGPUDevice
+  input, // Array
   usageFlag = GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
 ) => {
+  // 1. Convert array into float32 data
   const data = new Float32Array(input);
+
+  // 2. Create buffer (this object gets returned)
   const buffer = device.createBuffer({
     size: data.byteLength,
     usage: usageFlag,
     mappedAtCreation: true
   });
+
+  // 3. Map the data
   new Float32Array(buffer.getMappedRange()).set(data);
+
+  // 4. Unmap so that data can be used by the GPU
   buffer.unmap();
   return buffer;
 };
@@ -111,21 +126,19 @@ export const createGPUBuffer = (
 };
 `.split("\n");
 
-export const initGPU = async ({ canvas }) => {
+export const initGPU = async ({ canvas, swapChainFormat = "bgra8unorm" }) => {
   checkWebGPU();
 
   const adapter = await navigator.gpu.requestAdapter();
   const device = await adapter.requestDevice();
   const context = canvas.getContext("webgpu");
-  const swapChainFormat = "bgra8unorm";
 
-  window.device = device;
   // Configure swap chain
   context.configure({
     device: device,
     format: swapChainFormat
   });
-  return { device, swapChainFormat, context };
+  return { device, context };
 };
 
 initGPU.doc = `
@@ -134,7 +147,7 @@ Accepts a map with the following props
 Returns a map of with the following props
   - device - GPUDevice: await adapter.requestDevice()
   - swapChainFormat - "bgra8unorm"
-  - context - WebGPU Context: canvas.getContext("webgpu")"
+  - context - WebGPU Context: canvas.getContext("webgpu")
 `.split("\n");
 
 initGPU.src = `
@@ -156,6 +169,7 @@ export const initGPU = async ({ canvas }) => {
   return { device, swapChainFormat, context };
 };
 `.split("\n");
+
 //
 export const checkWebGPU = () => {
   if (!navigator.gpu) {
@@ -203,7 +217,8 @@ export const createShaders = (vert = null, frag = null) => {
 };
 
 export const createSquare = async ({ canvas, vert, frag }) => {
-  const gpu = await initGPU({ canvas });
+  const swapChainFormat = "bgra8unorm";
+  const gpu = await initGPU({ canvas, swapChainFormat });
   const device = gpu.device;
 
   const vertexData = [
@@ -282,7 +297,7 @@ export const createSquare = async ({ canvas, vert, frag }) => {
       entryPoint: "main",
       targets: [
         {
-          format: gpu.swapChainFormat
+          format: swapChainFormat
         }
       ]
     },
