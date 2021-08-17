@@ -10,8 +10,10 @@ const CheckWebGPU = () => {
   }
 };
 
-export const Shaders = () => {
-  const vertex = `
+export const Shaders = (vert = null, frag = null) => {
+  const vertex =
+    vert ||
+    `
         struct Output {
             [[builtin(position)]] Position : vec4<f32>;
             [[location(0)]] vColor : vec4<f32>;
@@ -37,7 +39,9 @@ export const Shaders = () => {
         }
     `;
 
-  const fragment = `
+  const fragment =
+    frag ||
+    `
         [[stage(fragment)]]
         fn main([[location(0)]] vColor: vec4<f32>) -> [[location(0)]] vec4<f32> {
             return vColor;
@@ -46,20 +50,27 @@ export const Shaders = () => {
   return { vertex, fragment };
 };
 
-export const CreateTriangle = async ({ canvas }) => {
+export const CreateTriangle = async ({ canvas, vert, frag }) => {
   CheckWebGPU();
 
-  // const canvas = document.getElementById("canvas-webgpu");
+  `Step 1: GPU Adapter`;
   const adapter = await navigator.gpu.requestAdapter();
+
+  `Step 2: GPU Device`;
   const device = await adapter.requestDevice();
+
+  `Step 3: WebGPU Context`;
   const context = canvas.getContext("webgpu");
-  const format = "bgra8unorm";
+
+  `Step 4: Configure Swap Chain`;
+  const swapChainFormat = "bgra8unorm";
   context.configure({
     device: device,
-    format: format
+    format: swapChainFormat
   });
 
-  const shader = Shaders();
+  `Step 5: Render Pipeline`;
+  const shader = Shaders(vert, frag);
   const pipeline = device.createRenderPipeline({
     vertex: {
       module: device.createShaderModule({
@@ -74,7 +85,7 @@ export const CreateTriangle = async ({ canvas }) => {
       entryPoint: "main",
       targets: [
         {
-          format: format
+          format: swapChainFormat
         }
       ]
     },
@@ -83,7 +94,10 @@ export const CreateTriangle = async ({ canvas }) => {
     }
   });
 
+  `Step 5: Command Encoder`;
   const commandEncoder = device.createCommandEncoder();
+
+  `Step 6: Render Pass`;
   const textureView = context.getCurrentTexture().createView();
   const renderPass = commandEncoder.beginRenderPass({
     colorAttachments: [
@@ -98,5 +112,6 @@ export const CreateTriangle = async ({ canvas }) => {
   renderPass.draw(3, 1, 0, 0);
   renderPass.endPass();
 
+  `Step 7: Submit`;
   device.queue.submit([commandEncoder.finish()]);
 };
