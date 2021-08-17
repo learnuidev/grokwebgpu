@@ -20,6 +20,43 @@ export const makeGlobal = obj => {
 };
 `.split("\n");
 
+export function createRenderPipeline(
+  device,
+  {
+    vertex: { code, entryPoint, buffers, ...otherVertexProps },
+    fragment: {
+      code: fcode,
+      entryPoint: fentryPoint,
+      targets,
+      ...otherFragmentProps
+    },
+    primitive: { topology, ...otherPrimitiveProps }
+  }
+) {
+  return device.createRenderPipeline({
+    vertex: {
+      module: device.createShaderModule({
+        code
+      }),
+      entryPoint,
+      buffers: buffers
+    },
+    fragment: {
+      module: device.createShaderModule({
+        code: fcode,
+        ...otherVertexProps
+      }),
+      entryPoint: fentryPoint,
+      targets: targets,
+      ...otherFragmentProps
+    },
+    primitive: {
+      topology,
+      ...otherPrimitiveProps
+    }
+  });
+}
+
 export const createGPUBuffer = (
   device, // WebGPUDevice
   input, // Array
@@ -261,11 +298,10 @@ export const createSquare = async ({ canvas, vert, frag }) => {
   const colorBuffer = createGPUBuffer(device, colorData);
 
   const shader = createShaders(vert, frag);
-  const pipeline = device.createRenderPipeline({
+
+  const pipeline = createRenderPipeline(device, {
     vertex: {
-      module: device.createShaderModule({
-        code: shader.vertex
-      }),
+      code: shader.vertex,
       entryPoint: "main",
       buffers: [
         {
@@ -291,9 +327,7 @@ export const createSquare = async ({ canvas, vert, frag }) => {
       ]
     },
     fragment: {
-      module: device.createShaderModule({
-        code: shader.fragment
-      }),
+      code: shader.fragment,
       entryPoint: "main",
       targets: [
         {
