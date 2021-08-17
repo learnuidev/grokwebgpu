@@ -10,12 +10,13 @@ const CheckWebGPU = () => {
   }
 };
 
-const Shaders = () => {
+export const Shaders = () => {
   const vertex = `
         struct Output {
             [[builtin(position)]] Position : vec4<f32>;
             [[location(0)]] vColor : vec4<f32>;
         };
+
         [[stage(vertex)]]
         fn main([[builtin(vertex_index)]] VertexIndex: u32) -> Output {
             var pos = array<vec2<f32>, 3>(
@@ -45,7 +46,7 @@ const Shaders = () => {
   return { vertex, fragment };
 };
 
-const CreateTriangle = async ({ canvas }) => {
+export const CreateTriangle = async ({ canvas }) => {
   CheckWebGPU();
 
   // const canvas = document.getElementById("canvas-webgpu");
@@ -98,10 +99,4 @@ const CreateTriangle = async ({ canvas }) => {
   renderPass.endPass();
 
   device.queue.submit([commandEncoder.finish()]);
-};
-
-export default {
-  CreateTriangle,
-  Shaders,
-  CheckWebGPU
 };

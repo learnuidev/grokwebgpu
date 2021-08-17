@@ -1,4 +1,4 @@
-//
+// NOTE: DOES NOT WORK
 const CheckWebGPU = () => {
   if (!navigator.gpu) {
     throw new Error(`Your current browser does not support WebGPU! Make sure you are on a system
