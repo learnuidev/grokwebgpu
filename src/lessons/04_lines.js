@@ -58,10 +58,10 @@ const CreatePrimitive = async ({
   const device = await adapter.requestDevice();
   const context = canvas.getContext("webgpu");
 
-  const format = "bgra8unorm";
+  const swapChainFormat = "bgra8unorm";
   context.configure({
     device: device,
-    format: format
+    format: swapChainFormat
   });
 
   const shader = Shaders(vert, frag);
@@ -79,7 +79,7 @@ const CreatePrimitive = async ({
       entryPoint: "main",
       targets: [
         {
-          format: format
+          format: swapChainFormat
         }
       ]
     },
