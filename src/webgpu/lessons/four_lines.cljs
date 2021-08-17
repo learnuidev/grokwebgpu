@@ -1,5 +1,5 @@
 (ns webgpu.lessons.four-lines
-  (:require ["/drxu/04_lines.js" :default line]))
+  (:require ["/lessons/04_lines.js" :default line]))
 
 ;; Define interface
 (defn shaders [color]

@@ -1,5 +1,5 @@
 (ns webgpu.lessons.five-triangle
-  (:require ["/drxu/05_triangle_primitive.js" :as triangle]))
+  (:require ["/lessons/05_triangle_primitive.js" :as triangle]))
 
 (comment
   (js/console.log triangle))

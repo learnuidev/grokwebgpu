@@ -1,5 +1,5 @@
 (ns webgpu.lessons.two-triangle
-  (:require ["/drxu/02_triangle.js" :default triangle]))
+  (:require ["/lessons/02_triangle.js" :default triangle]))
 
 ;; Define interface
 (defn shaders [color]
