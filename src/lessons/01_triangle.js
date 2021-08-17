@@ -76,7 +76,8 @@ const Shaders = color => {
     `;
 
   `                                     == A Basic Fragment Shader ==
-  - The fragment shader’s job is to return a color for its pixel based on its inputs. In this example, the output color is just the interpolated color from the rasterizer:
+  - The fragment shader’s job is to return a color for its pixel based on its inputs.
+    In this example, the output color is just the interpolated color from the rasterizer:
 
 
     [[stage(fragment)]]
@@ -218,7 +219,7 @@ const CreateTriangle = async ({ color = "(1.0,1.0,1.0,1.0)", canvas }) => {
      so we’ll go one step at a time.
    `;
 
-  `Step 5.1: Creating Shader Modules
+  `Step 5.1: Creating Shader Modules by calling device.createShaderModule
    - First, we need the shaders as a string. Shaders function returns an object with two properties:
      vertex and fragment shaders
 
@@ -278,7 +279,7 @@ const CreateTriangle = async ({ color = "(1.0,1.0,1.0,1.0)", canvas }) => {
   });
   ` Step 5.2: Render Pipeline Descriptors Cont.
    - The pipeline requires the vertex and fragment attributes, which corresponds to
-     the vertex shader and fragment shader respectively. We also have to specify the
+     the vertex shader and fragment shader respectively.
 
    - Both the vertex and fragment attributes accepts a object with two properties:
       - module: which we defined in the previous step
@@ -359,8 +360,9 @@ const CreateTriangle = async ({ color = "(1.0,1.0,1.0,1.0)", canvas }) => {
      required field called colorAttachments that is an array attached to the current
      render channel to store image information. In our example, it stores the
      background color as [0.5, 0.8, 0.5, 1.0] representing [R, G, B, alpha] in the
-     localValue attribute, while in the attachment attribute, it stores the rendering
-     result on the current image of the swap chain, i.e., swapChain.getCurrentTexture(). createView().
+     localValue attribute, while in the view attribute, it stores the rendering
+     result on the current image of the swap chain, i.e., swapChain.getCurrentTexture().createView().
+     We also pass storeOp to "store"
    - The other field is called depthStencilAttachment that stores the depth information
      of the rendering pass and the template information. Our triangle example does
      not need depth information because it is actually drawing a 2D flat (without depth) triangle.`;
