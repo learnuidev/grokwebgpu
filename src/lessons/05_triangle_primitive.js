@@ -151,26 +151,24 @@ export const CreatePrimitive = async ({
     indexFormat = "uint32";
   }
 
-  // const canvas = document.getElementById('canvas-webgpu');
-  // Step 1: Create adapter, device and context
+  `Step 1: Create adapter, device and context`;
   const adapter = await navigator.gpu.requestAdapter();
   const device = await adapter.requestDevice();
   const context = canvas.getContext("webgpu");
 
+  `Step 2: Configure swap chain by calling configure method`;
   const format = "bgra8unorm";
-  // Step 2: Configure device and format by calling configure method
   context.configure({
     device: device,
     format: format
   });
 
-  const { vertex, fragment } = Shaders(vert, frag);
-  // Step 3: Create a pipeline using createRenderPipeline function
-  // This will get used in the renderPass.setPipeline method
-  `
-   Rendering pipeline combines our shaders, vertex attributes,
-   and output configuration, which we can use to render our triangle.
+  `Step 3: Create a pipeline using createRenderPipeline function
+    - This will get used in the renderPass.setPipeline method
+    - Rendering pipeline combines our shaders, vertex attributes,
+      and output configuration, which we can use to render our triangle.
   `;
+  const { vertex, fragment } = Shaders(vert, frag);
   const pipeline = device.createRenderPipeline({
     // Vertex module
     vertex: {
@@ -191,9 +189,9 @@ export const CreatePrimitive = async ({
         }
       ]
     },
-    // Primitive module
+    // Primitive module: For speciying
     primitive: {
-      topology: primitiveType,
+      topology: primitiveType, // One of the following: point-list, line-list, line-strip, triangle-list triangle-strip
       stripIndexFormat: indexFormat
     }
   });
@@ -201,7 +199,8 @@ export const CreatePrimitive = async ({
   // Step 4: Create command encoder
   const commandEncoder = device.createCommandEncoder();
 
-  // Step 5: Create Texture view
+  // Step 5: Create render pass
+  // Step 5.1: Create Texture view
   // This gets used in beginRenderPass method
   const textureView = context.getCurrentTexture().createView();
 
@@ -216,7 +215,6 @@ export const CreatePrimitive = async ({
   which we’ll write to the current swap chain image. As the image will change each frame to the
   current swap chain image, we don’t set it just yet.
   `;
-  // Step 6: Create render pass
 
   const renderPass = commandEncoder.beginRenderPass({
     colorAttachments: [
@@ -228,13 +226,10 @@ export const CreatePrimitive = async ({
     ]
   });
 
-  window.renderPass = renderPass;
-
-  // Step 7: Set pipeline, draw and end pass
   renderPass.setPipeline(pipeline);
   renderPass.draw(9, 1, 0, 0);
   renderPass.endPass();
 
-  // Step 8: Submit the work to the queue
+  // Step 6: Submit the work to the queue
   device.queue.submit([commandEncoder.finish()]);
 };
