@@ -103,7 +103,7 @@ const Shaders = color => {
 
 `Comment: How to create a triangle`;
 const CreateTriangle = async ({ color = "(1.0,1.0,1.0,1.0)", canvas }) => {
-  `Step 1: GPU Adapter
+  ` === Step 1 : Access GPU Adapter ===
     Access the GPU (adapter + device) (https://developers.google.com/web/updates/2019/08/get-started-with-gpu-compute-on-the-web)
      - Accessing the GPU is easy in WebGPU.
        Calling navigator.gpu.requestAdapter() returns a JavaScript promise that will asynchronously resolve with a GPU adapter.
@@ -112,42 +112,54 @@ const CreateTriangle = async ({ color = "(1.0,1.0,1.0,1.0)", canvas }) => {
   `;
   const adapter = await navigator.gpu.requestAdapter();
 
-  `
-  Step 2 Access GPU Device
-  - Once you have the GPU adapter, call adapter.requestDevice() to get a promise that will resolve with a GPU device you’ll
-    use to do some GPU computation.
-  - This device object provides a context to work with the hardware and an interface to create GPU objects
-    such as buffers and textures, and execute commands on the device. - Practical WebGPU Graphics, Chapter 2.13
+  ` === Step 2 Access GPU Device ===
+   - Once you have the GPU adapter, call adapter.requestDevice() to get a promise that will resolve with a GPU device you’ll
+     use to do some GPU computation.
+   - This device object provides a context to work with the hardware and an interface to create GPU objects
+     such as buffers and textures, and execute commands on the device. - Practical WebGPU Graphics, Chapter 2.13
   `;
   const device = await adapter.requestDevice();
 
-  ` Step 3: Access the canvas WebGPU context
-    - As with WebGL, we need a context for the HTML5 canvas element that will be used to
-      display the rendered graphics.
-    - We can get the WebGPU context like so: canvas.getContext("webgpu")
+  ` === Step 3: Access the canvas WebGPU context ===
+   - As with WebGL, we need a context for the HTML5 canvas element that will be used to
+     display the rendered graphics.
+   - We can get the WebGPU context like so: canvas.getContext("webgpu")
   `;
   const context = canvas.getContext("webgpu");
 
-  `
-  Step 4: Configure the Swap Chain
+  `=============================================================================`;
+  `=============================================================================`;
 
-  Next we’ll create a swap chain and specify where the results output from our
-  fragment shader should be written. To display the images on our canvas, we
-  need a swap chain associated with its context.
+  ` === Step 4: Configure the Swap Chain ===
 
-  The swap chain will let us rotate through the images being displayed on
-  the canvas, rendering to a buffer which is not visible while another is
-  shown (i.e., double-buffering). We create a swap chain by specifying the
-  desired image format and texture usage. The swap chain will create one
-  or more textures for us, sized to match the canvas they’ll be displayed on.
+  - WebGPU like Vulkan does not have the concept of a "default framebuffer", hence it
+    requires an infrastructure that will own the buffers we will render to before
+    we visualize them on the screen. This infrastructure is known as the swap chain
+    and must be created explicitly in WebGPU. The swap chain is essentially a queue
+    of images that are waiting to be presented to the screen. Our application
+    will acquire such an image to draw to it, and then return it to the queue.
+    How exactly the queue works and the conditions for presenting an image from
+    the queue depend on how the swap chain is set up, but the general purpose of
+    the swap chain is to synchronize the presentation of images with the refresh
+    rate of the screen.
 
-  Since we’ll be rendering directly to the swap chain textures, we specify
-  that they’ll be used as output attachments.
+  - Next we’ll create a swap chain and specify where the results output from our
+    fragment shader should be written. To display the images on our canvas, we
+    need a swap chain associated with its context.
 
-  Note that the swap chain is a series of virtual framebuffers used in the graphics
-  card and graphics API for frame rate stabilization. In WebGPU, the swap chain exists in the GPU memory.
-  It has become a universal concept in modern graphics standard. The swap chain has already
-  been used in DirectX 12 and Vulkan.
+  - The swap chain will let us rotate through the images being displayed on
+    the canvas, rendering to a buffer which is not visible while another is
+    shown (i.e., double-buffering). We create a swap chain by specifying the
+    desired image format and texture usage. The swap chain will create one
+    or more textures for us, sized to match the canvas they’ll be displayed on.
+
+  - Since we’ll be rendering directly to the swap chain textures, we specify
+    that they’ll be used as output attachments.
+
+  - Note that the swap chain is a series of virtual framebuffers used in the graphics
+    card and graphics API for frame rate stabilization. In WebGPU, the swap chain exists in the GPU memory.
+    It has become a universal concept in modern graphics standard. The swap chain has already
+    been used in DirectX 12 and Vulkan.
 
   // ===
 
@@ -180,14 +192,30 @@ const CreateTriangle = async ({ color = "(1.0,1.0,1.0,1.0)", canvas }) => {
   });
   `By passing the device to the configure() function, we create a linkage between the GPU and the canvas.`;
 
-  `=== Step 3: Shaders ===
-   - Notes: See line 1`;
+  `=============================================================================`;
+  `=============================================================================`;
+
+  `Step 5.0: Vertex and Fragment Shaders
+   We need to implement a vertex shader and a fragment shader to
+   create a simple triangle on the canvas.
+
+   A vertex shader processes each incoming vertex. It takes attributes,
+   such as world position, color, normal, and texture coordinates as input. The output
+   is the final position in clip coordinates and the attributes such as color and
+   texture coordinates, which need to be passed on to the fragment shader. These
+   values will then be interpolated over the fragments to produce a smooth color gradient.
+
+   Note that a clip coordinate is a 4D vector from the vertex shader that is subsequently
+   converted into a normalized device coordinate by dividing the whole vector by its
+   last component. These normalized device coordinates are homogeneous coordinates that
+   map the framebuffer to a [−1, 1] by [−1, 1] coordinate system.`;
+
   const shader = Shaders(color);
 
-  `Step 5: Rendering Pipeline
+  ` === Step 5: Rendering Pipeline ===
    - Now that we have some shaders and some vertex data, we’re ready to assemble our
-     render pipeline. This consists of several steps involving many different descriptor types, so we’ll go one step at a time.
-
+     render pipeline. This consists of several steps involving many different descriptor types,
+     so we’ll go one step at a time.
    `;
 
   `Step 5.1: Creating Shader Modules
@@ -203,7 +231,6 @@ const CreateTriangle = async ({ color = "(1.0,1.0,1.0,1.0)", canvas }) => {
      WebGPU shader module and a Metal shader library.
 
   `;
-
   const vertShaderModule = device.createShaderModule({
     code: shader.vertex
   });
@@ -213,7 +240,6 @@ const CreateTriangle = async ({ color = "(1.0,1.0,1.0,1.0)", canvas }) => {
   });
 
   `Step 5.2: Render Pipeline Descriptors
-
   What we have done so far is the basic initialization steps, including GPUAdapter, GPUDevice, and
   GPUSwapChain, etc. All of these objects are common for any WebGPU applications and they do not
   need to reset or change. However, after this initialization, the rendering pipeline and the shading
@@ -250,7 +276,7 @@ const CreateTriangle = async ({ color = "(1.0,1.0,1.0,1.0)", canvas }) => {
     },
     primitiveTopology: "triangle-list"
   });
-  `
+  ` Step 5.2: Render Pipeline Descriptors Cont.
    - The pipeline requires the vertex and fragment attributes, which corresponds to
      the vertex shader and fragment shader respectively. We also have to specify the
 
@@ -309,8 +335,13 @@ const CreateTriangle = async ({ color = "(1.0,1.0,1.0,1.0)", canvas }) => {
       }]
     };
  `;
-  `Step 6: Rendering Output
-  === 6.1 device.createCommandEncoder ===
+
+  `=============================================================================`;
+  `=============================================================================`;
+
+  `=== Step 6: Rendering Output ===`;
+
+  `=== 6.1 device.createCommandEncoder ===
   - The final step is to record and submit GPU commands using a GPU command encoder.
     Note that the GPUCommandEncoder is directly derived from the MTLCommandEncoder in Metal;
     while in DirectX 12 and Vulkan, it is called GraphicsCommandList and CommandBuffer respectively.
