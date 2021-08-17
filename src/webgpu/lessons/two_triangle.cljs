@@ -94,8 +94,8 @@
                     :color "(1.0,1.0,1.0,1.0)"
                     :vert
                     "struct Output {
-                        [[builtin(position)]] Position : vec4<f32>;
-                        [[location(0)]] vColor : vec4<f32>;
+                         [[builtin(position)]] pos: vec4<f32>;
+                         [[location(0)]]     color: vec4<f32>;
                      };
 
                      [[stage(vertex)]]
@@ -113,13 +113,13 @@
                              vec3<f32>(0.0, 0.0, 1.0)
                          );
                          var output: Output;
-                         output.Position = vec4<f32>(pos[vertIdx], 0.0, 1.0);
-                         output.vColor = vec4<f32>(color[vertIdx], 1.0);
+                         output.pos = vec4<f32>(pos[vertIdx], 0.0, 1.0);
+                         output.color = vec4<f32>(color[vertIdx], 1.0);
                          return output;
                       }"
                     :frag
                     "[[stage(fragment)]]
-                     fn main([[location(0)]] vColor: vec4<f32>) -> [[location(0)]] vec4<f32> {
-                        return vColor;
+                     fn main([[location(0)]] color: vec4<f32>) -> [[location(0)]] vec4<f32> {
+                        return color;
                         // return vec4<f32>(0.0, 1.0, 1.0, 1.0);
                      }"}))
