@@ -1,5 +1,8 @@
 ` ===========================================================================================`;
-` ============================== Helper functions (3) =======================================`;
+` ============================== Helper functions (6) =======================================`;
+function flatten(coll) {
+  return coll.flat();
+}
 
 export const makeGlobal = obj => {
   for (const apiName in obj) {
@@ -72,7 +75,7 @@ export const createGPUBuffer = (
     mappedAtCreation: true
   });
 
-  // 3. Map the data
+  // 3: Get Access to the Content
   new Float32Array(buffer.getMappedRange()).set(data);
 
   // 4. Unmap so that data can be used by the GPU
@@ -94,20 +97,23 @@ createGPUBuffer.doc = `
 createGPUBuffer.src = `
 export const createGPUBuffer = (
   device,
-  data,
+  input,
   usageFlag = GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
 ) => {
-  // Step 1: Create buffer
+  Step 1: Convert input array into float32 array
+  const data = new Float32Array(input);
+
+  Step 2: Create buffer
   const buffer = device.createBuffer({
     size: data.byteLength, // needs to be a Float32Array instance
     usage: usageFlag,
     mappedAtCreation: true
   });
 
-  // === Step 2: Get Access to the Content
+  Step 3: Get Access to the Content
   new Float32Array(buffer.getMappedRange()).set(data);
 
-  // === Step 3: Unmap
+  Step 4: Unmap so that GPU can make use of the data
   buffer.unmap();
   return buffer;
 };
@@ -116,29 +122,39 @@ export const createGPUBuffer = (
 createGPUBuffer.srcDetailed = `
 export const createGPUBuffer = (
   device,
-  data,
+  input,
   usageFlag = GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
 ) => {
-  Step 1: Create buffer
-   - GPU buffers are created via GPUDevice.createBuffer function that
-     returns a new buffer in the mapped or unmapped state.
-   - data consists of 3 vertices, each with a float2 vector.
-     We use Float32Array to store the vertex position: each 32-bit
-     floating-point number needs 4 bytes; each vertex needs 2
-     32-bit floating point numbers to represent the 2D coordinates
-     of x and y (here we draw the triangle on the
-     x-y plane without the z coordinate), so each vertex
-     needs 2 * 4 bytes. Thus, 3 vertices for our triangle
-     needs 3 * 2 * 4 = 24 bytes.
-   - When the GPU buffer is mapped (by setting mappedAtCreation to true),
-     meaning it is owned by the CPU, and it is accessible in read/write from
-     JavaScript. However, it has to be unmapped in order to make it accessible by GPU.
-     The concept of mapped/unmapped is needed to prevent race conditions where GPU and CPU access
-     memory at the same time.
-   ===
+// ===
+// Step 1: Convert input array into float32 array
+// ===
+
+  const data = new Float32Array(input);
+
+// ====
+// Step 2: Create buffer
+// ====
+2.1 GPU buffers are created via GPUDevice.createBuffer function that
+    returns a new buffer in the mapped or unmapped state.
+
+2.2 data consists of 3 vertices, each with a float2 vector. We
+    use Float32Array to store the vertex position: each 32-bit
+    floating-point number needs 4 bytes; each vertex needs 2
+    32-bit floating point numbers to represent the 2D coordinates
+    of x and y (here we draw the triangle on the
+    x-y plane without the z coordinate), so each vertex
+    needs 2 * 4 bytes. Thus, 3 vertices for our triangle
+    needs 3 * 2 * 4 = 24 bytes.
+
+2.3 When the GPU buffer is mapped (by setting mappedAtCreation to true),
+    meaning it is owned by the CPU, and it is accessible in read/write from
+    JavaScript. However, it has to be unmapped in order to make it accessible by GPU.
+    The concept of mapped/unmapped is needed to prevent race conditions where GPU and CPU access
+    memory at the same time.
+===
 
   const buffer = device.createBuffer({
-    size: data.byteLength, // needs to be a Float32Array instance
+    size: data.byteLength, // (4 * 32)
     usage: usageFlag,
     mappedAtCreation: true
   });
@@ -256,50 +272,31 @@ export const createShaders = (vert = null, frag = null) => {
 export const createSquare = async ({ canvas, vert, frag }) => {
   const swapChainFormat = "bgra8unorm";
   const gpu = await initGPU({ canvas, swapChainFormat });
-  const device = gpu.device;
 
-  const vertexData = [
-    -0.5,
-    -0.5, // vertex a
-    0.5,
-    -0.5, // vertex b
-    -0.5,
-    0.5, // vertex d
-    -0.5,
-    0.5, // vertex d
-    0.5,
-    -0.5, // vertex b
-    0.5,
-    0.5 // vertex c
-  ];
+  const vertexData = flatten([
+    [-0.5, -0.5], // vertex a
+    [0.5, -0.5], // vertex b
+    [-0.5, 0.5], // vertex d
+    [-0.5, 0.5], // vertex d
+    [0.5, -0.5], // vertex b
+    [0.5, 0.5] // vertex c
+  ]);
 
-  const colorData = [
-    1,
-    0,
-    0, // vertex a: red
-    0,
-    1,
-    0, // vertex b: green
-    1,
-    1,
-    0, // vertex d: yellow
-    1,
-    1,
-    0, // vertex d: yellow
-    0,
-    1,
-    0, // vertex b: green
-    0,
-    0,
-    1 // vertex c: blue
-  ];
+  const colorData = flatten([
+    [1, 0, 0], // vertex a: red
+    [0, 1, 0], // vertex b: green
+    [1, 1, 0], // vertex d: yellow
+    [1, 1, 0], // vertex d: yellow
+    [0, 1, 0], // vertex b: green
+    [0, 0, 1] // vertex c: blue
+  ]);
 
-  const vertexBuffer = createGPUBuffer(device, vertexData);
-  const colorBuffer = createGPUBuffer(device, colorData);
+  const vertexBuffer = createGPUBuffer(gpu.device, vertexData);
+  const colorBuffer = createGPUBuffer(gpu.device, colorData);
 
   const shader = createShaders(vert, frag);
 
-  const pipeline = createRenderPipeline(device, {
+  const pipeline = createRenderPipeline(gpu.device, {
     vertex: {
       code: shader.vertex,
       entryPoint: "main",
@@ -340,7 +337,7 @@ export const createSquare = async ({ canvas, vert, frag }) => {
     }
   });
 
-  const commandEncoder = device.createCommandEncoder();
+  const commandEncoder = gpu.device.createCommandEncoder();
   const textureView = gpu.context.getCurrentTexture().createView();
   const renderPass = commandEncoder.beginRenderPass({
     colorAttachments: [
@@ -357,5 +354,5 @@ export const createSquare = async ({ canvas, vert, frag }) => {
   renderPass.draw(6);
   renderPass.endPass();
 
-  device.queue.submit([commandEncoder.finish()]);
+  gpu.device.queue.submit([commandEncoder.finish()]);
 };

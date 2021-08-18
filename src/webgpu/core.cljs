@@ -6,10 +6,12 @@
    #_["@webgpu/glslang/dist/web-devel-onefile/glslang.js" :as glslang]
    #_[webgpu.lessons.four-lines :refer [app]]
    #_[webgpu.lessons.five-triangle :refer [app]]
-   [webgpu.lessons.six-buffers :refer [app]]))
+   [webgpu.lessons.six-buffers :refer [app]]
+   [webgpu.lessons.seven-buffer-triangles :as buffer-triangle]
+   [webgpu.lessons.eight-buffer-one-triangle :as buffer-one-triangle]))
 
 (defn ^:dev/after-load start []
-  (app))
+  (buffer-one-triangle/app))
 
 (defn ^:export init []
   (start))
