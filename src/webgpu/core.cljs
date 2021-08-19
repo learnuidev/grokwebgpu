@@ -9,10 +9,11 @@
    [webgpu.lessons.six-buffers :refer [app]]
    [webgpu.lessons.seven-buffer-triangles :as buffer-triangle]
    [webgpu.lessons.eight-buffer-one-triangle :as buffer-one-triangle]
-   [webgpu.lessons.nine-transformation :as nine]))
+   [webgpu.lessons.nine-transformation :as nine]
+   [webgpu.lessons.ten-projection :as ten]))
 
 (defn ^:dev/after-load start []
-  (nine/app))
+  (ten/app))
 
 (defn ^:export init []
   (start))
