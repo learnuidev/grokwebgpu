@@ -232,7 +232,7 @@ export const createCube = async props => {
       entryPoint: "main",
       buffers: [
         {
-          arrayStride: cubeVertexSize,
+          arrayStride: cubeVertexSize, // 32
           attributes: [
             {
               // position
@@ -243,7 +243,7 @@ export const createCube = async props => {
             {
               // color
               shaderLocation: 1,
-              offset: cubeColorOffset,
+              offset: cubeColorOffset, // 12
               format: "float32x3"
             }
           ]
