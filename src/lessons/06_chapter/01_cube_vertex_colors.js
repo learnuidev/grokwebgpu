@@ -107,19 +107,19 @@ const gpuInit = async ({ canvas }) => {
 `=========================================================`;
 export const createCube = async props => {
   const { libs, canvas } = props;
-  // constants
+  // 0. constants
   const isAnimation = true;
   const isPerspective = true;
 
-  // Custom npm libs
+  // 0. Custom npm libs
   const { mat4, vec3 } = libs;
 
-  // Create adapter, device and WebGPU context
+  // 1. Create adapter, device and WebGPU context
   const { device, context, swapChainFormat } = await gpuInit({
     canvas
   });
 
-  //create vertices
+  // 2. create vertices and vertex buffer
   const cubeVertexSize = 4 * 8; // Byte size of one cube vertex.
   const cubeColorOffset = 4 * 3; // Byte offset of cube vertex color attribute.
   const vertexData = [
@@ -181,7 +181,7 @@ export const createCube = async props => {
   new Float32Array(vertexBuffer.getMappedRange()).set(data);
   vertexBuffer.unmap();
 
-  //create uniform data
+  // 3. create uniform data
   const modelMatrix = mat4.create();
   const mvpMatrix = mat4.create();
   let vMatrix = mat4.create();
@@ -198,7 +198,7 @@ export const createCube = async props => {
 
   window.camera = camera;
 
-  //create render pipeline
+  // 4. create render pipeline
   const shaders = {
     vertex: `
           [[block]] struct Uniforms {
@@ -272,7 +272,7 @@ export const createCube = async props => {
     }
   });
 
-  //create uniform buffer and bind group
+  // 5. create uniform buffer and bind group
   const sceneUniformBuffer = device.createBuffer({
     size: 64,
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
@@ -292,7 +292,7 @@ export const createCube = async props => {
     ]
   });
 
-  //render pass
+  // 6. render pass
   const depthTexture = device.createTexture({
     size: [canvas.width, canvas.height, 1],
     format: "depth24plus-stencil8",
@@ -324,6 +324,7 @@ export const createCube = async props => {
     .getCurrentTexture()
     .createView();
 
+  // 7. command encoder
   const commandEncoder = device.createCommandEncoder();
   const renderPass = commandEncoder.beginRenderPass(renderPassDescription);
   renderPass.setPipeline(pipeline);
@@ -332,5 +333,7 @@ export const createCube = async props => {
   renderPass.setBindGroup(0, sceneUniformBindGroup);
   renderPass.draw(36, 1, 0, 0);
   renderPass.endPass();
+
+  // 8. submit
   device.queue.submit([commandEncoder.finish()]);
 };
