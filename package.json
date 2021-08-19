@@ -9,6 +9,7 @@
     "start": "npx shadow-cljs watch app"
   },
   "dependencies": {
+    "3d-view-controls": "^2.2.2",
     "@webgpu/glslang": "^0.0.15",
     "gl-matrix": "^3.3.0",
     "kaboom": "^0.5.1",

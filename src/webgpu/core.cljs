@@ -10,10 +10,11 @@
    [webgpu.lessons.seven-buffer-triangles :as buffer-triangle]
    [webgpu.lessons.eight-buffer-one-triangle :as buffer-one-triangle]
    [webgpu.lessons.nine-transformation :as nine]
-   [webgpu.lessons.ten-projection :as ten]))
+   [webgpu.lessons.ten-projection :as ten]
+   [webgpu.lessons.ch06.cube-vertex-colors :as eleven]))
 
 (defn ^:dev/after-load start []
-  (ten/app))
+  (eleven/app))
 
 (defn ^:export init []
   (start))
