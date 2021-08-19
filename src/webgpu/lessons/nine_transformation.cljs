@@ -3,7 +3,7 @@
 
 (comment "Matrix Helpers")
 
-(defn mat4->transform [v2 mv mm]
+(defn transform-mat4 [v2 mv mm]
   (.transformMat4 vec4 v2 mv mm))
 (comment "Lesson: 3D Transformations
           Date: 08/18/2021")
@@ -41,7 +41,7 @@
         - vector-input
         - original vector
         - scaling matrix"
-(def scaled-vec (mat4->transform (.create vec4) my-vec my-mat));
+(def scaled-vec (transform-mat4 (.create vec4) my-vec my-mat));
 "#object [Float32Array 0.5 1 4.5 1]"
 
 "Ex 1.2: Scaling ========"
@@ -55,7 +55,7 @@
 
 "get final scaled vector:"
 (comment
-  (mat4->transform scaled-vec my-vec scaled-mat));
+  (transform-mat4 scaled-vec my-vec scaled-mat));
 "#object [Float32Array 0.5 0.5 1.3499999046325684 1]"
 
 "===================="
@@ -79,7 +79,7 @@
                   -1.5 -1.0 -1.5 1]"
 
 "Step 2.3: get final translated vector:"
-(def trans-vec (mat4->transform (.create vec4) my-vec2 trans-mat));)
+(def trans-vec (transform-mat4 (.create vec4) my-vec2 trans-mat));)
 "=> [Float32Array 0 2.5 5 1]"
 
 "===================="
@@ -103,7 +103,7 @@
                         0                  0                  1 0
                         0                  0                  0 1]"
 "3.4: get final rotated vector:"
-(def rot-vec (.transformMat4 vec4 (.create vec4), my-vec3, rot-mat));
+(def rot-vec (transform-mat4 (.create vec4), my-vec3, rot-mat));
 "#object [Float32Array -0.7071067690849304 2.1213202476501465 3 1]"
 
 (defn app []
