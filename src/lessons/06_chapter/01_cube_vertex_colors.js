@@ -1,4 +1,4 @@
-const createTransforms = (
+const updateTransformationMatrix = (
   modelMat,
   translation,
   rotation,
@@ -30,33 +30,48 @@ const createTransforms = (
   mat4.multiply(modelMat, translateMat, modelMat);
 };
 
-const createViewProjection = (isPerspective, respectRatio, { libs }) => {
-  const { mat4 } = libs;
+const createViewProjection = ({ isPerspective, aspectRatio }, props) => {
+  // Returns a projection matrix
+  const perspectiveCam = ({ fovy, aspectRatio, near, far }, { libs }) => {
+    const projectionMatrix = libs.mat4.create();
+    libs.mat4.perspective(projectionMatrix, fovy, aspectRatio, near, far);
+    return projectionMatrix;
+  };
+
+  // Returns a projection matrix
+  const orthoCam = ({ fovy, aspectRatio, near, far }, { libs }) => {
+    const projectionMatrix = libs.mat4.create();
+    libs.mat4.ortho(projectionMatrix, -4, 4, -3, 3, -1, 6);
+    return projectionMatrix;
+  };
+
+  const {
+    libs: { mat4 }
+  } = props;
+
+  const eyePosition = [2, 2, 4];
+  const center = [0, 0, 0];
+  const upDirection = [0, 1, 0];
   const viewMatrix = mat4.create();
-  const projectionMatrix = mat4.create();
   const viewProjectionMatrix = mat4.create();
 
-  if (isPerspective) {
-    mat4.perspective(
-      projectionMatrix,
-      (2 * Math.PI) / 5,
-      respectRatio,
-      0.1,
-      100.0
-    );
-  } else {
-    mat4.ortho(projectionMatrix, -4, 4, -3, 3, -1, 6);
-  }
-
-  const CameraPosition = [2, 2, 4];
-  const LookDirection = [0, 0, 0];
-  const UpDirection = [0, 1, 0];
-  mat4.lookAt(viewMatrix, CameraPosition, LookDirection, UpDirection);
+  const projectionMatrix = isPerspective
+    ? perspectiveCam(
+        {
+          fovy: (2 * Math.PI) / 5,
+          aspectRatio,
+          near: 0.1,
+          far: 100.0
+        },
+        props
+      )
+    : orthoCam();
+  mat4.lookAt(viewMatrix, eyePosition, center, upDirection);
   mat4.multiply(viewProjectionMatrix, projectionMatrix, viewMatrix);
 
   const cameraOption = {
-    eye: CameraPosition,
-    center: LookDirection,
+    eye: eyePosition,
+    center,
     zoomMax: 100,
     zoomSpeed: 2
   };
@@ -104,22 +119,28 @@ const gpuInit = async ({ canvas }) => {
   };
 };
 
-`=========================================================`;
+`==================================================================`;
+`======================= createCube ==============================`;
+
 export const createCube = async props => {
+  `Step 1: Init`;
+  // a. Custom npm libs
   const { libs, canvas } = props;
-  // 0. constants
+  const { mat4, vec3 } = libs;
+
+  // b. constants
   const isAnimation = true;
   const isPerspective = true;
 
-  // 0. Custom npm libs
-  const { mat4, vec3 } = libs;
-
-  // 1. Create adapter, device and WebGPU context
+  `Step 1: CREATE GPU Device AND WebGPU Context`;
+  // c. Create adapter, device and WebGPU context
   const { device, context, swapChainFormat } = await gpuInit({
     canvas
   });
 
-  // 2. create vertices and vertex buffer
+  `==================================================================`;
+  `Step 2: CREATE Vertices AND Vertex Buffer`;
+
   const cubeVertexSize = 4 * 8; // Byte size of one cube vertex.
   const cubeColorOffset = 4 * 3; // Byte offset of cube vertex color attribute.
   const vertexData = [
@@ -181,23 +202,13 @@ export const createCube = async props => {
   new Float32Array(vertexBuffer.getMappedRange()).set(data);
   vertexBuffer.unmap();
 
-  // 3. create uniform data
-  const modelMatrix = mat4.create();
-  const mvpMatrix = mat4.create();
-  let vMatrix = mat4.create();
-  let vpMatrix = mat4.create();
-  const vp = createViewProjection(
-    isPerspective,
-    canvas.width / canvas.height,
-    props
-  );
-  vpMatrix = vp.viewProjectionMatrix;
+  `==================================================================`;
 
-  let camera = libs.camera(canvas, vp.cameraOption);
+  // glslangModule = await import(/* webpackIgnore: true */ "https://unpkg.com/@webgpu/glslang@0.0.15/dist/web-devel/glslang.js");
 
-  window.camera = camera;
+  `==================================================================`;
 
-  // 4. create render pipeline
+  `Step 3: CREATE Render Pipeline`;
   const shaders = {
     vertex: `
           [[block]] struct Uniforms {
@@ -271,12 +282,33 @@ export const createCube = async props => {
     }
   });
 
-  // 5. create uniform buffer and bind group
+  `Step 4: CREATE Camera`;
+  `=========================== CAMERA ==========================`;
+  `Step 4.1: CREATE Uniform data`;
+  const modelMatrix = mat4.create();
+  const mvpMatrix = mat4.create();
+  let vpMatrix = mat4.create();
+  const vp = createViewProjection(
+    {
+      isPerspective,
+      aspectRatio: canvas.width / canvas.height
+    },
+    props
+  );
+  vpMatrix = vp.viewProjectionMatrix;
+
+  let camera = libs.camera(canvas, vp.cameraOption);
+
+  window.camera = camera;
+  `-------------------------------------------------------`;
+  `Step 4.2: CREATE uniform buffer and bind group`;
+
+  //
   const sceneUniformBuffer = device.createBuffer({
     size: 64,
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
   });
-
+  // line 354: renderPass.setBindGroup(0, sceneUniformBindGroup);
   const sceneUniformBindGroup = device.createBindGroup({
     layout: pipeline.getBindGroupLayout(0),
     entries: [
@@ -291,58 +323,59 @@ export const createCube = async props => {
     ]
   });
 
-  // 6. render pass
-  const depthTexture = device.createTexture({
-    size: [canvas.width, canvas.height, 1],
-    format: "depth24plus-stencil8",
-    usage: GPUTextureUsage.RENDER_ATTACHMENT
-  });
-
-  const renderPassDescription = {
-    colorAttachments: [
-      {
-        view: context.getCurrentTexture().createView(),
-        loadValue: [0.5, 0.5, 0.8, 1],
-        StoreOp: "store"
+  `Step 5: Draw`;
+  const draw = () => {
+    // 5.1. render pass
+    const depthTexture = device.createTexture({
+      size: [canvas.width, canvas.height, 1],
+      format: "depth24plus-stencil8",
+      usage: GPUTextureUsage.RENDER_ATTACHMENT
+    });
+    // l352: const renderPass = commandEncoder.beginRenderPass(renderPassDescription);
+    const renderPassDescription = {
+      colorAttachments: [
+        {
+          view: context.getCurrentTexture().createView(),
+          loadValue: [0.5, 0.5, 0.8, 1],
+          StoreOp: "store"
+        }
+      ],
+      depthStencilAttachment: {
+        view: depthTexture.createView(),
+        depthLoadValue: 1,
+        depthStoreOp: "store",
+        stencilLoadValue: 0,
+        stencilStoreOp: "store"
       }
-    ],
-    depthStencilAttachment: {
-      view: depthTexture.createView(),
-      depthLoadValue: 1,
-      depthStoreOp: "store",
-      stencilLoadValue: 0,
-      stencilStoreOp: "store"
-    }
+    };
+
+    updateTransformationMatrix(
+      modelMatrix,
+      // translation
+      [0, -5, -10],
+      // rotation
+      vec3.fromValues(0, -1, 0),
+      // scaling
+      [2, 2, 1],
+      props
+    );
+
+    mat4.multiply(mvpMatrix, vpMatrix, modelMatrix);
+    device.queue.writeBuffer(sceneUniformBuffer, 0, mvpMatrix);
+
+    // 7. command encoder
+    const commandEncoder = device.createCommandEncoder();
+    const renderPass = commandEncoder.beginRenderPass(renderPassDescription);
+    renderPass.setPipeline(pipeline);
+
+    renderPass.setVertexBuffer(0, vertexBuffer);
+    renderPass.setBindGroup(0, sceneUniformBindGroup);
+    renderPass.draw(36, 1, 0, 0);
+    renderPass.endPass();
+
+    // 8. submit
+    device.queue.submit([commandEncoder.finish()]);
   };
 
-  let rotation = vec3.fromValues(0, -1, 0);
-  createTransforms(
-    modelMatrix,
-    // translation
-    [0, -5, -10],
-    // rotation
-    rotation,
-    // scaling
-    [2, 2, 1],
-    props
-  );
-  mat4.multiply(mvpMatrix, vpMatrix, modelMatrix);
-  device.queue.writeBuffer(sceneUniformBuffer, 0, mvpMatrix);
-
-  renderPassDescription.colorAttachments[0].view = context
-    .getCurrentTexture()
-    .createView();
-
-  // 7. command encoder
-  const commandEncoder = device.createCommandEncoder();
-  const renderPass = commandEncoder.beginRenderPass(renderPassDescription);
-  renderPass.setPipeline(pipeline);
-
-  renderPass.setVertexBuffer(0, vertexBuffer);
-  renderPass.setBindGroup(0, sceneUniformBindGroup);
-  renderPass.draw(36, 1, 0, 0);
-  renderPass.endPass();
-
-  // 8. submit
-  device.queue.submit([commandEncoder.finish()]);
+  draw();
 };

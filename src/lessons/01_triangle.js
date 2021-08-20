@@ -211,7 +211,14 @@ const CreateTriangle = async ({ color = "(1.0,1.0,1.0,1.0)", canvas }) => {
    last component. These normalized device coordinates are homogeneous coordinates that
    map the framebuffer to a [−1, 1] by [−1, 1] coordinate system.`;
 
-  const shader = Shaders(color);
+  let col;
+
+  if (typeof color === "object") {
+    const { r, g, b, a } = color;
+    col = "( " + r + ", " + g + ", " + b + ", " + a + ")";
+  }
+
+  const shader = Shaders(col);
 
   ` === Step 5: Rendering Pipeline ===
    - Now that we have some shaders and some vertex data, we’re ready to assemble our

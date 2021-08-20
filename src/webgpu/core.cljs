@@ -1,14 +1,14 @@
 (ns webgpu.core
   (:require
-   #_[webgpu.lessons.one-triangle :refer [app]]
-   #_[webgpu.lessons.two-triangle :refer [app]]
+   [webgpu.lessons.one-triangle :as one]
+   [webgpu.lessons.two-triangle :as two]
    ;; TODO:: lesson 03
    #_["@webgpu/glslang/dist/web-devel-onefile/glslang.js" :as glslang]
-   #_[webgpu.lessons.four-lines :refer [app]]
-   #_[webgpu.lessons.five-triangle :refer [app]]
-   [webgpu.lessons.six-buffers :refer [app]]
-   [webgpu.lessons.seven-buffer-triangles :as buffer-triangle]
-   [webgpu.lessons.eight-buffer-one-triangle :as buffer-one-triangle]
+   [webgpu.lessons.four-lines :as four]
+   [webgpu.lessons.five-triangle :as five]
+   [webgpu.lessons.six-buffers :as six]
+   [webgpu.lessons.seven-buffer-triangles :as seven]
+   [webgpu.lessons.eight-buffer-one-triangle :as eight]
    [webgpu.lessons.nine-transformation :as nine]
    [webgpu.lessons.ten-projection :as ten]
    [webgpu.lessons.ch06.cube-vertex-colors :as eleven]))
