@@ -287,17 +287,15 @@ export const createCube = async props => {
   `Step 4.1: CREATE Uniform data`;
   const modelMatrix = mat4.create();
   const mvpMatrix = mat4.create();
-  let vpMatrix = mat4.create();
-  const vp = createViewProjection(
+  const viewProjection = createViewProjection(
     {
       isPerspective,
       aspectRatio: canvas.width / canvas.height
     },
     props
   );
-  vpMatrix = vp.viewProjectionMatrix;
 
-  let camera = libs.camera(canvas, vp.cameraOption);
+  let camera = libs.camera(canvas, viewProjection.cameraOption);
 
   window.camera = camera;
   `-------------------------------------------------------`;
@@ -360,7 +358,7 @@ export const createCube = async props => {
       props
     );
 
-    mat4.multiply(mvpMatrix, vpMatrix, modelMatrix);
+    mat4.multiply(mvpMatrix, viewProjection.viewProjectionMatrix, modelMatrix);
     device.queue.writeBuffer(sceneUniformBuffer, 0, mvpMatrix);
 
     // 7. command encoder
