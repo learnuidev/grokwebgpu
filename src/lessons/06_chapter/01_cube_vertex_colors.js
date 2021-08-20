@@ -14,7 +14,7 @@ const createTransforms = (
 
   rotation = rotation || [0, 0, 0];
   translation = translation || [0, 0, 0];
-  scaling = scaling || [1, 1, 1];
+  scaling = scaling || [2, 2, 1];
 
   //perform indivisual transformations
   mat4.fromTranslation(translateMat, translation);
@@ -193,7 +193,6 @@ export const createCube = async props => {
   );
   vpMatrix = vp.viewProjectionMatrix;
 
-  let rotation = vec3.fromValues(0, 0, 0);
   let camera = libs.camera(canvas, vp.cameraOption);
 
   window.camera = camera;
@@ -316,7 +315,17 @@ export const createCube = async props => {
     }
   };
 
-  createTransforms(modelMatrix, [0, 0, 0], rotation, [1, 1, 1], props);
+  let rotation = vec3.fromValues(0, -1, 0);
+  createTransforms(
+    modelMatrix,
+    // translation
+    [0, -5, -10],
+    // rotation
+    rotation,
+    // scaling
+    [2, 2, 1],
+    props
+  );
   mat4.multiply(mvpMatrix, vpMatrix, modelMatrix);
   device.queue.writeBuffer(sceneUniformBuffer, 0, mvpMatrix);
 
