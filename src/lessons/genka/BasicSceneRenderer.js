@@ -524,7 +524,7 @@ export function patu(props) {
     if (!success) return;
 
     scene.add(cube({ x: -2, y: 1 }, props));
-    // scene.add(pyramid({ x: 2 }, props));
+    scene.add(pyramid({ x: 2 }, props));
 
     const doFrame = () => {
       // ANIMATE
