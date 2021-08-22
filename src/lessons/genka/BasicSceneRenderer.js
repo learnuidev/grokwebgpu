@@ -31,7 +31,7 @@ export function Camera({ x, y, z, rotX, rotY, rotZ, fovy, aspect, near, far }) {
   this.far = far || 1000;
 }
 
-Camera.prototype.getViewMatrix = function() {
+Camera.prototype.getViewMatrix = function () {
   const { mat4, vec3 } = props.libs;
 
   let viewMatrix = mat4.create();
@@ -49,7 +49,7 @@ Camera.prototype.getViewMatrix = function() {
   return viewMatrix;
 };
 
-Camera.prototype.getProjectionMatrix = function() {
+Camera.prototype.getProjectionMatrix = function () {
   const { mat4, vec3 } = props.libs;
   let projectionMatrix = mat4.create();
   mat4.perspective(
@@ -62,7 +62,7 @@ Camera.prototype.getProjectionMatrix = function() {
   return projectionMatrix;
 };
 
-Camera.prototype.getCameraViewProjMatrix = function() {
+Camera.prototype.getCameraViewProjMatrix = function () {
   const { mat4, vec3 } = props.libs;
 
   const viewProjMatrix = mat4.create();
@@ -160,11 +160,11 @@ export function Scene() {
   this.objects = [];
 }
 
-Scene.prototype.add = function(object) {
+Scene.prototype.add = function (object) {
   this.objects.push(object);
 };
 
-Scene.prototype.getObjects = function(object) {
+Scene.prototype.getObjects = function (object) {
   return this.objects;
 };
 
@@ -193,29 +193,12 @@ const wgslShaders = {
   fn main([[location(0)]] fragColor : vec4<f32>) -> [[location(0)]] vec4<f32> {
     return fragColor;
   }
-  `
+  `,
 };
 
 const positionOffset = 0;
 const colorOffset = 4 * 4; // Byte offset of object color attribute.
 const vertexSize = 4 * 10; // Byte size of one object.
-
-// export interface RenderObjectParameter {
-//   x?: number;
-//   y?: number;
-//   z?: number;
-//
-//   rotX?: number;
-//   rotY?: number;
-//   rotZ?: number;
-// }
-
-// return new RenderObject(
-//   this.device,
-//   cubeVertexArray,
-//   cubeVertexCount,
-//   parameter
-// );
 
 export function RenderObject(
   device,
@@ -244,7 +227,7 @@ export function RenderObject(
   this.renderPipeline = device.createRenderPipeline({
     vertex: {
       module: device.createShaderModule({
-        code: wgslShaders.vertex
+        code: wgslShaders.vertex,
       }),
       entryPoint: "main",
       buffers: [
@@ -255,43 +238,43 @@ export function RenderObject(
               // position
               shaderLocation: 0,
               offset: positionOffset,
-              format: "float32x4"
+              format: "float32x4",
             },
             {
               // color
               shaderLocation: 1,
               offset: colorOffset,
-              format: "float32x4"
-            }
-          ]
-        }
-      ]
+              format: "float32x4",
+            },
+          ],
+        },
+      ],
     },
     fragment: {
       module: device.createShaderModule({
-        code: wgslShaders.fragment
+        code: wgslShaders.fragment,
       }),
       entryPoint: "main",
       targets: [
         {
-          format: "bgra8unorm"
-        }
-      ]
+          format: "bgra8unorm",
+        },
+      ],
     },
     primitive: {
       topology: "triangle-list",
-      cullMode: "back"
+      cullMode: "back",
     },
     depthStencil: {
       depthWriteEnabled: true,
       depthCompare: "less",
-      format: "depth24plus-stencil8"
-    }
+      format: "depth24plus-stencil8",
+    },
   });
 
   this.uniformBuffer = device.createBuffer({
     size: this.uniformBufferSize,
-    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   });
 
   this.uniformBindGroup = device.createBindGroup({
@@ -302,16 +285,16 @@ export function RenderObject(
         resource: {
           buffer: this.uniformBuffer,
           offset: 0,
-          size: this.matrixSize
-        }
-      }
-    ]
+          size: this.matrixSize,
+        },
+      },
+    ],
   });
 
   this.verticesBuffer = device.createBuffer({
     size: verticesArray.byteLength,
     usage: GPUBufferUsage.VERTEX,
-    mappedAtCreation: true
+    mappedAtCreation: true,
   });
   new Float32Array(this.verticesBuffer.getMappedRange()).set(verticesArray);
   this.verticesBuffer.unmap();
@@ -332,7 +315,7 @@ function pyramid(parameter) {
   );
 }
 
-RenderObject.prototype.draw = function(passEncoder, device, camera) {
+RenderObject.prototype.draw = function (passEncoder, device, camera) {
   this.updateTransformationMatrix(camera.getCameraViewProjMatrix());
 
   passEncoder.setPipeline(this.renderPipeline);
@@ -348,8 +331,9 @@ RenderObject.prototype.draw = function(passEncoder, device, camera) {
   passEncoder.draw(this.vertexCount, 1, 0, 0);
 };
 
-// Question: Why do we need this?
-RenderObject.prototype.updateTransformationMatrix = function(
+// 20/08/2021 - Question: Why do we need this?
+// 22/08/2021 - gets used in `RenderObject.prototype.draw
+RenderObject.prototype.updateTransformationMatrix = function (
   cameraProjectionMatrix
 ) {
   const { mat4, vec3 } = props.libs;
@@ -372,8 +356,9 @@ RenderObject.prototype.updateTransformationMatrix = function(
   );
 };
 
-// Question: Why do we need this?
-RenderObject.prototype.setTransformation = function(parameter) {
+// 20/08/2021 - Question: Why do we need this?
+// 22/08/2021 - Answer: gets used in RenderObject. last line
+RenderObject.prototype.setTransformation = function (parameter) {
   if (parameter == null) {
     return;
   }
@@ -396,7 +381,7 @@ export function WebGPURenderer() {
 
 // DONE
 
-WebGPURenderer.prototype.init = async function(canvas) {
+WebGPURenderer.prototype.init = async function (canvas) {
   if (!canvas) {
     console.log("missing canvas!");
     return false;
@@ -416,13 +401,13 @@ WebGPURenderer.prototype.init = async function(canvas) {
   this.presentationFormat = this.context.getPreferredFormat(adapter);
   this.presentationSize = [
     canvas.clientWidth * devicePixelRatio,
-    canvas.clientHeight * devicePixelRatio
+    canvas.clientHeight * devicePixelRatio,
   ];
 
   this.context.configure({
     device: this.device,
     format: this.presentationFormat,
-    size: this.presentationSize
+    size: this.presentationSize,
   });
   const depthTextureView = this.depthTextureView();
   this.renderPassDescriptor = {
@@ -430,8 +415,8 @@ WebGPURenderer.prototype.init = async function(canvas) {
       {
         // attachment is acquired and set in render loop.
         view: undefined,
-        loadValue: { r: 0.5, g: 0.5, b: 0.5, a: 1.0 }
-      }
+        loadValue: { r: 0.5, g: 0.5, b: 0.5, a: 1.0 },
+      },
     ],
     depthStencilAttachment: {
       view: depthTextureView,
@@ -439,15 +424,15 @@ WebGPURenderer.prototype.init = async function(canvas) {
       depthLoadValue: 1.0,
       depthStoreOp: "store",
       stencilLoadValue: 0,
-      stencilStoreOp: "store"
-    }
+      stencilStoreOp: "store",
+    },
   };
 
   return (this.initSuccess = true);
 };
 
 // DONE
-WebGPURenderer.prototype.update = function(canvas) {
+WebGPURenderer.prototype.update = function (canvas) {
   if (!this.initSuccess) {
     return;
   }
@@ -456,7 +441,7 @@ WebGPURenderer.prototype.update = function(canvas) {
 };
 
 // DONE
-WebGPURenderer.prototype.frame = function(camera, scene) {
+WebGPURenderer.prototype.frame = function (camera, scene) {
   if (!this.initSuccess) {
     return;
   }
@@ -477,19 +462,20 @@ WebGPURenderer.prototype.frame = function(camera, scene) {
 };
 
 // DONE
-WebGPURenderer.prototype.depthTextureView = function() {
+WebGPURenderer.prototype.depthTextureView = function () {
   return this.device
     .createTexture({
       size: this.presentationSize,
       format: "depth24plus-stencil8",
-      usage: GPUTextureUsage.RENDER_ATTACHMENT
+      usage: GPUTextureUsage.RENDER_ATTACHMENT,
     })
     .createView();
 };
 
 // DONE
-WebGPURenderer.prototype.updateRenderPassDescriptor = function() {
-  this.renderPassDescriptor.depthStencilAttachment.view = this.depthTextureView();
+WebGPURenderer.prototype.updateRenderPassDescriptor = function () {
+  this.renderPassDescriptor.depthStencilAttachment.view =
+    this.depthTextureView();
 };
 
 // APP
@@ -502,13 +488,13 @@ export function patu(props) {
   document.body.appendChild(outputCanvas);
 
   const camera = new Camera({
-    aspect: outputCanvas.width / outputCanvas.height
+    aspect: outputCanvas.width / outputCanvas.height,
   });
   camera.z = 7;
   const scene = new Scene();
 
   const renderer = new WebGPURenderer();
-  renderer.init(props.canvas).then(success => {
+  renderer.init(props.canvas).then((success) => {
     if (!success) return;
 
     scene.add(cube({ x: -2, y: 1 }));
@@ -540,7 +526,7 @@ export function patu(props) {
     scene.add(
       cube({
         x: (Math.random() - 0.5) * 20,
-        y: (Math.random() - 0.5) * 10
+        y: (Math.random() - 0.5) * 10,
       })
     );
   }
@@ -549,7 +535,7 @@ export function patu(props) {
     scene.add(
       pyramid({
         x: (Math.random() - 0.5) * 20,
-        z: (Math.random() - 0.5) * 20
+        z: (Math.random() - 0.5) * 20,
       })
     );
   }
@@ -570,26 +556,26 @@ export function patu(props) {
   // MOUSE CONTROLS
 
   // ZOOM
-  outputCanvas.onwheel = event => {
+  outputCanvas.onwheel = (event) => {
     camera.z += event.deltaY / 100;
   };
 
   // MOUSE DRAG
   var mouseDown = false;
-  outputCanvas.onmousedown = event => {
+  outputCanvas.onmousedown = (event) => {
     mouseDown = true;
 
     lastMouseX = event.pageX;
     lastMouseY = event.pageY;
   };
 
-  outputCanvas.onmouseup = event => {
+  outputCanvas.onmouseup = (event) => {
     mouseDown = false;
   };
 
   var lastMouseX = -1;
   var lastMouseY = -1;
-  outputCanvas.onmousemove = event => {
+  outputCanvas.onmousemove = (event) => {
     if (!mouseDown) {
       return;
     }
