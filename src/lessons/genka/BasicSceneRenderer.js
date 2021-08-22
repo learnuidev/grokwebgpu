@@ -8,12 +8,15 @@
 
 `Module: 1: Camera ====`;
 
+// GLOBAL Objects
 let device;
+let props;
 
-export function Camera(
-  { x, y, z, rotX, rotY, rotZ, fovy, aspect, near, far },
-  props
-) {
+function setProps(p) {
+  props = p;
+}
+
+export function Camera({ x, y, z, rotX, rotY, rotZ, fovy, aspect, near, far }) {
   this.x = x || 0;
   this.y = y || 0;
   this.z = z || 0;
@@ -26,12 +29,10 @@ export function Camera(
 
   this.near = near || 1;
   this.far = far || 1000;
-
-  this.props = props;
 }
 
 Camera.prototype.getViewMatrix = function() {
-  const { mat4, vec3 } = this.props.libs;
+  const { mat4, vec3 } = props.libs;
 
   let viewMatrix = mat4.create();
 
@@ -49,7 +50,7 @@ Camera.prototype.getViewMatrix = function() {
 };
 
 Camera.prototype.getProjectionMatrix = function() {
-  const { mat4, vec3 } = this.props.libs;
+  const { mat4, vec3 } = props.libs;
   let projectionMatrix = mat4.create();
   mat4.perspective(
     projectionMatrix,
@@ -62,7 +63,7 @@ Camera.prototype.getProjectionMatrix = function() {
 };
 
 Camera.prototype.getCameraViewProjMatrix = function() {
-  const { mat4, vec3 } = this.props.libs;
+  const { mat4, vec3 } = props.libs;
 
   const viewProjMatrix = mat4.create();
   const view = this.getViewMatrix();
@@ -155,9 +156,8 @@ const triangleVertexArray = new Float32Array([
 
 `Module 3: Scene ===`;
 
-export function Scene(props) {
+export function Scene() {
   this.objects = [];
-  this.props = props;
 }
 
 Scene.prototype.add = function(object) {
@@ -221,12 +221,9 @@ export function RenderObject(
   device,
   verticesArray,
   vertexCount,
-  parameter = { x: 0, y: 0, z: 0, rotX: 0, rotY: 0, rotZ: 0 },
-  props
+  parameter = { x: 0, y: 0, z: 0, rotX: 0, rotY: 0, rotZ: 0 }
 ) {
   this.device = device;
-
-  this.props = props;
 
   this.x = parameter.x || 0;
   this.y = parameter.y || 0;
@@ -322,25 +319,16 @@ export function RenderObject(
   this.setTransformation(parameter);
 }
 
-// export function RenderObject({ vertexCount, vertexSize, parameter }, props)
-
-function cube(parameter, props) {
-  return new RenderObject(
-    device,
-    cubeVertexArray,
-    cubeVertexCount,
-    parameter,
-    props
-  );
+function cube(parameter) {
+  return new RenderObject(device, cubeVertexArray, cubeVertexCount, parameter);
 }
 
-function pyramid(parameter, props) {
+function pyramid(parameter) {
   return new RenderObject(
     device,
     triangleVertexArray,
     triangleVertexCount,
-    parameter,
-    props
+    parameter
   );
 }
 
@@ -364,7 +352,7 @@ RenderObject.prototype.draw = function(passEncoder, device, camera) {
 RenderObject.prototype.updateTransformationMatrix = function(
   cameraProjectionMatrix
 ) {
-  const { mat4, vec3 } = this.props.libs;
+  const { mat4, vec3 } = props.libs;
   // MOVE / TRANSLATE OBJECT
   const modelMatrix = mat4.create();
   mat4.translate(
@@ -506,25 +494,25 @@ WebGPURenderer.prototype.updateRenderPassDescriptor = function() {
 
 // APP
 export function patu(props) {
-  console.log("PROPS", props);
+  setProps(props);
+
   const outputCanvas = props.canvas;
   outputCanvas.width = window.innerWidth;
   outputCanvas.height = window.innerHeight;
   document.body.appendChild(outputCanvas);
 
-  const camera = new Camera(
-    { aspect: outputCanvas.width / outputCanvas.height },
-    props
-  );
+  const camera = new Camera({
+    aspect: outputCanvas.width / outputCanvas.height
+  });
   camera.z = 7;
-  const scene = new Scene(props);
+  const scene = new Scene();
 
   const renderer = new WebGPURenderer();
   renderer.init(props.canvas).then(success => {
     if (!success) return;
 
-    scene.add(cube({ x: -2, y: 1 }, props));
-    scene.add(pyramid({ x: 2 }, props));
+    scene.add(cube({ x: -2, y: 1 }));
+    scene.add(pyramid({ x: 2 }));
 
     const doFrame = () => {
       // ANIMATE
@@ -550,25 +538,19 @@ export function patu(props) {
 
   function addCube() {
     scene.add(
-      cube(
-        {
-          x: (Math.random() - 0.5) * 20,
-          y: (Math.random() - 0.5) * 10
-        },
-        props
-      )
+      cube({
+        x: (Math.random() - 0.5) * 20,
+        y: (Math.random() - 0.5) * 10
+      })
     );
   }
 
   function addPyramid() {
     scene.add(
-      pyramid(
-        {
-          x: (Math.random() - 0.5) * 20,
-          z: (Math.random() - 0.5) * 20
-        },
-        props
-      )
+      pyramid({
+        x: (Math.random() - 0.5) * 20,
+        z: (Math.random() - 0.5) * 20
+      })
     );
   }
 
@@ -594,37 +576,36 @@ export function patu(props) {
 
   // MOUSE DRAG
   var mouseDown = false;
-  // outputCanvas.onmousedown = event => {
-  //   mouseDown = true;
-  //
-  //   lastMouseX = event.pageX;
-  //   lastMouseY = event.pageY;
-  // };
-  //
+  outputCanvas.onmousedown = event => {
+    mouseDown = true;
 
-  // outputCanvas.onmouseup = event => {
-  //   mouseDown = false;
-  // };
+    lastMouseX = event.pageX;
+    lastMouseY = event.pageY;
+  };
+
+  outputCanvas.onmouseup = event => {
+    mouseDown = false;
+  };
 
   var lastMouseX = -1;
   var lastMouseY = -1;
-  // outputCanvas.onmousemove = event => {
-  //   if (!mouseDown) {
-  //     return;
-  //   }
-  //
-  //   var mousex = event.pageX;
-  //   var mousey = event.pageY;
-  //
-  //   if (lastMouseX > 0 && lastMouseY > 0) {
-  //     const roty = mousex - lastMouseX;
-  //     const rotx = mousey - lastMouseY;
-  //
-  //     camera.rotY += roty / 100;
-  //     camera.rotX += rotx / 100;
-  //   }
-  //
-  //   lastMouseX = mousex;
-  //   lastMouseY = mousey;
-  // };
+  outputCanvas.onmousemove = event => {
+    if (!mouseDown) {
+      return;
+    }
+
+    var mousex = event.pageX;
+    var mousey = event.pageY;
+
+    if (lastMouseX > 0 && lastMouseY > 0) {
+      const roty = mousex - lastMouseX;
+      const rotx = mousey - lastMouseY;
+
+      camera.rotY += roty / 100;
+      camera.rotX += rotx / 100;
+    }
+
+    lastMouseX = mousex;
+    lastMouseY = mousey;
+  };
 }
