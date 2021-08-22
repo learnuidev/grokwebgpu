@@ -1,38 +1,5 @@
-`=== A Brief Orientation to WGSL ===
-
-- Shaders in WebGPU are written in a language called WebGPU Shading Language, abbreviated WGSL1.
-
-- Modern shading languages have more similarities among them than differences. After all,
-  their purpose is to provide a high-level syntax for the I/O and arithmetic operations
-  available on the typical GPU.
-
-- Syntactically, WGSL borrows much from Rust. Functions definitions begin with fn; return types
-  appear after the parameter list, preceded by an
-  arrow (->); generics use angle brackets (e.g., vec4<f32>). Scalar numeric types have terse names like f32 and u32.
-
-- WGSL also has some similarities to Metal Shading Language (MSL).
-  Attributes (e.g., [[location(0)]]) use C++-style double square brackets.
-  Varyings are returned from the vertex shader as a struct, and the interpolated
-  fragment values are taken as a struct-valued parameter to the fragment
-  shader (which may or not be of the same as the output type of the vertex shader, but must be “compatible”).
-
-As an introduction to the language, we will look at the vertex and fragment
-shaders that will produce our first triangle.
-
-
-Source: https://metalbyexample.com/webgpu-part-one/
-`;
-
-`=== Meaning of double bracket...
-Question: Meaning of double bracket “[[foo()]] type name;” syntax in c++?
-
-Answer: That is the attribute specifier syntax. It was introduced as a unified syntax to access
-        what were formerly compiler-specific extensions (now some are standardized).
-
-Source: https://stackoverflow.com/questions/40451840/meaning-of-double-bracket-foo-type-name-syntax-in-c
- `;
-const Shaders = color => {
-  `                                    == A Basic Vertex Shader ==
+const ShadersDoc = {
+  vertex: `                                    == A Basic Vertex Shader ==
   - As in Metal Shading Language, we can define a struct that contains the outputs of our
     vertex shader. We are obligated to provide a vec4<f32> (a four-element floating-point vector) containing
     the clip-space vertex position, attributed with [[builtin(position)]].
@@ -61,21 +28,8 @@ const Shaders = color => {
       output.color = color;
       return output;
     }
-  `;
-
-  const vertex = `
-        [[stage(vertex)]]
-        fn main([[builtin(vertex_index)]] VertexIndex: u32) -> [[builtin(position)]] vec4<f32> {
-            var pos = array<vec2<f32>, 3>(
-                vec2<f32>(0.0, 0.5),
-                vec2<f32>(-0.5, -0.5),
-                vec2<f32>(0.5, -0.5)
-            );
-            return vec4<f32>(pos[VertexIndex], 0.0, 1.0);
-        }
-    `;
-
-  `                                     == A Basic Fragment Shader ==
+  `,
+  frag: `                                     == A Basic Fragment Shader ==
   - The fragment shader’s job is to return a color for its pixel based on its inputs.
     In this example, the output color is just the interpolated color from the rasterizer:
 
@@ -92,7 +46,22 @@ const Shaders = color => {
   - This completes the shader code for the sample. We’ll see in the next section how to incorporate this
     shader code into a complete render pipeline.
 
-`;
+`,
+};
+
+const Shaders = (color) => {
+  const vertex = `
+        [[stage(vertex)]]
+        fn main([[builtin(vertex_index)]] VertexIndex: u32) -> [[builtin(position)]] vec4<f32> {
+            var pos = array<vec2<f32>, 3>(
+                vec2<f32>(0.0, 0.5),
+                vec2<f32>(-0.5, -0.5),
+                vec2<f32>(0.5, -0.5)
+            );
+            return vec4<f32>(pos[VertexIndex], 0.0, 1.0);
+        }
+    `;
+
   const fragment = `
         [[stage(fragment)]]
         fn main() -> [[location(0)]] vec4<f32> {
@@ -189,7 +158,7 @@ const CreateTriangle = async ({ color = "(1.0,1.0,1.0,1.0)", canvas }) => {
 
   context.configure({
     device: device,
-    format: swapChainFormat
+    format: swapChainFormat,
   });
   `By passing the device to the configure() function, we create a linkage between the GPU and the canvas.`;
 
@@ -218,6 +187,8 @@ const CreateTriangle = async ({ color = "(1.0,1.0,1.0,1.0)", canvas }) => {
     col = "( " + r + ", " + g + ", " + b + ", " + a + ")";
   }
 
+  col = color || "(r: 0.0, g: 0.0, b: 0.0, a: 1.0)";
+
   const shader = Shaders(col);
 
   ` === Step 5: Rendering Pipeline ===
@@ -240,11 +211,11 @@ const CreateTriangle = async ({ color = "(1.0,1.0,1.0,1.0)", canvas }) => {
 
   `;
   const vertShaderModule = device.createShaderModule({
-    code: shader.vertex
+    code: shader.vertex,
   });
 
   const fragShaderModule = device.createShaderModule({
-    code: shader.fragment
+    code: shader.fragment,
   });
 
   `Step 5.2: Render Pipeline Descriptors
@@ -271,18 +242,18 @@ const CreateTriangle = async ({ color = "(1.0,1.0,1.0,1.0)", canvas }) => {
   const pipeline = device.createRenderPipeline({
     vertex: {
       module: vertShaderModule,
-      entryPoint: "main"
+      entryPoint: "main",
     },
     fragment: {
       module: fragShaderModule,
       entryPoint: "main",
       targets: [
         {
-          format: swapChainFormat
-        }
-      ]
+          format: swapChainFormat,
+        },
+      ],
     },
-    primitiveTopology: "triangle-list"
+    primitiveTopology: "triangle-list",
   });
   ` Step 5.2: Render Pipeline Descriptors Cont.
    - The pipeline requires the vertex and fragment attributes, which corresponds to
@@ -380,9 +351,9 @@ const CreateTriangle = async ({ color = "(1.0,1.0,1.0,1.0)", canvas }) => {
         {
           view: context.getCurrentTexture().createView(),
           loadValue: { r: 0.5, g: 0.5, b: 0.8, a: 1.0 }, //background color
-          storeOp: "store"
-        }
-      ]
+          storeOp: "store",
+        },
+      ],
     }
   );
 
@@ -405,5 +376,5 @@ const CreateTriangle = async ({ color = "(1.0,1.0,1.0,1.0)", canvas }) => {
 
 export default {
   Shaders,
-  CreateTriangle
+  CreateTriangle,
 };
