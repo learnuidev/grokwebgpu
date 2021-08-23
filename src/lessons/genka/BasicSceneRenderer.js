@@ -31,6 +31,7 @@ export function Camera({ x, y, z, rotX, rotY, rotZ, fovy, aspect, near, far }) {
   this.far = far || 1000;
 }
 
+// Private
 Camera.prototype.getViewMatrix = function () {
   const { mat4, vec3 } = props.libs;
 
@@ -49,6 +50,7 @@ Camera.prototype.getViewMatrix = function () {
   return viewMatrix;
 };
 
+// Private
 Camera.prototype.getProjectionMatrix = function () {
   const { mat4, vec3 } = props.libs;
   let projectionMatrix = mat4.create();
@@ -330,7 +332,7 @@ RenderObject.prototype.draw = function (passEncoder, device, camera) {
   passEncoder.setBindGroup(0, this.uniformBindGroup);
   passEncoder.draw(this.vertexCount, 1, 0, 0);
 };
-
+// Private
 // 20/08/2021 - Question: Why do we need this?
 // 22/08/2021 - gets used in `RenderObject.prototype.draw
 RenderObject.prototype.updateTransformationMatrix = function (
@@ -356,6 +358,7 @@ RenderObject.prototype.updateTransformationMatrix = function (
   );
 };
 
+// Private
 // 20/08/2021 - Question: Why do we need this?
 // 22/08/2021 - Answer: gets used in RenderObject. last line
 RenderObject.prototype.setTransformation = function (parameter) {
