@@ -1,69 +1,33 @@
-// co tangent function
-function cotan(x) {
-  return 1 / Math.tan(x);
-}
-
 /**
  * Generates a perspective projection matrix with the given bounds.
  * The near/far clip planes correspond to a normalized device coordinate Z range of [-1, 1],
  * which matches WebGL/OpenGL's clip volume.
  * Passing null/undefined/no value for far will generate infinite projection matrix.
  *
- * @param {mat4} out mat4 frustum matrix will be written into
  * @param {number} fovy Vertical field of view in radians
  * @param {number} aspect Aspect ratio. typically viewport width/height
  * @param {number} near Near bound of the frustum
  * @param {number} far Far bound of the frustum, can be null or Infinity
- * @returns {mat4} out
+ * @returns {mat4} array<f32>
  */
-function perspective(
-  out,
-  fovy = (2 * Math.PI) / 5,
-  aspect = 16 / 9,
-  near = 1,
-  far = 1000
-) {
-  const f = cotan(fovy / 2);
-  out[0] = f / aspect;
-  // TIP: unselect this and see what happens
-  // out[0] = f;
-  out[1] = 0;
-  out[2] = 0;
-  out[3] = 0;
-  out[4] = 0;
-  out[5] = f;
-  out[6] = 0;
-  out[7] = 0;
 
-  out[8] = 0;
-  out[9] = 0;
-  // TIP: remove - sign and see what happens
-  out[11] = -1;
-
-  out[12] = 0;
-  out[13] = 0;
-  out[15] = 0;
-  if (far != null && far !== Infinity) {
-    //
-    const nf = 1 / (near - far);
-    out[10] = (far + near) * nf;
-
-    // TIP: change the value from 2 to 1 and try zooming in
-    out[14] = 2 * far * near * nf;
-  } else {
-    out[10] = -1;
-    out[14] = -2 * near;
+function perspective(fovy, aspect, near, far) {
+  // co tangent function
+  function cotan(x) {
+    return 1 / Math.tan(x);
   }
-  return out;
-}
 
-// TODO:
-// 1. camera.ts - done
-// 2. index.ts -
-// 3. objects.ts - DONE
-// 4. renderer.ts - DONE
-// 5. scene.ts - DONE
-// 5. vertices - DONE
+  const f = cotan(fovy / 2);
+  const nf = 1 / (near - far);
+
+  // prettier-ignore
+  return new Float32Array([
+    f / aspect, 0, 0,                   0,
+    0,          f, 0,                   0,
+    0,          0, (far + near) * nf,  -1,
+    0,          0, 2 * far * near * nf, 0
+  ])
+}
 
 `Module: 1: Camera ====`;
 
@@ -111,16 +75,7 @@ Camera.prototype.getViewMatrix = function () {
 
 // Private
 Camera.prototype.getProjectionMatrix = function () {
-  const { mat4 } = props.libs;
-  let projectionMatrix = mat4.create();
-  mat4.perspective(
-    projectionMatrix,
-    this.fovy,
-    this.aspect,
-    this.near,
-    this.far
-  );
-  return projectionMatrix;
+  return perspective(this.fovy, this.aspect, this.near, this.far);
 };
 
 Camera.prototype.getCameraViewProjMatrix = function () {
@@ -623,6 +578,7 @@ export function patu(props) {
   const camera = new Camera({
     aspect: outputCanvas.width / outputCanvas.height,
   });
+  window.camera = camera;
   camera.z = 7;
   const scene = new Scene();
   window.scene = scene;
