@@ -232,8 +232,10 @@ const gpuInit = async ({ canvas }) => {
 export const createCube = async (props) => {
   `Step 1: Init`;
   // a. Custom npm libs
-  const { libs, canvas } = props;
-  const { mat4, vec3 } = libs;
+  const {
+    libs: { mat4, vec3, camera: cam },
+    canvas,
+  } = props;
 
   // b. constants
   const isAnimation = true;
@@ -403,7 +405,7 @@ export const createCube = async (props) => {
     props
   );
 
-  let camera = libs.camera(canvas, viewProjection.cameraOption);
+  let camera = cam(canvas, viewProjection.cameraOption);
 
   window.camera = camera;
   `-------------------------------------------------------`;
