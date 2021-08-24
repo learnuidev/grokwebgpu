@@ -1,3 +1,62 @@
+// co tangent function
+function cotan(x) {
+  return 1 / Math.tan(x);
+}
+
+/**
+ * Generates a perspective projection matrix with the given bounds.
+ * The near/far clip planes correspond to a normalized device coordinate Z range of [-1, 1],
+ * which matches WebGL/OpenGL's clip volume.
+ * Passing null/undefined/no value for far will generate infinite projection matrix.
+ *
+ * @param {mat4} out mat4 frustum matrix will be written into
+ * @param {number} fovy Vertical field of view in radians
+ * @param {number} aspect Aspect ratio. typically viewport width/height
+ * @param {number} near Near bound of the frustum
+ * @param {number} far Far bound of the frustum, can be null or Infinity
+ * @returns {mat4} out
+ */
+function perspective(
+  out,
+  fovy = (2 * Math.PI) / 5,
+  aspect = 16 / 9,
+  near = 1,
+  far = 1000
+) {
+  const f = cotan(fovy / 2);
+  out[0] = f / aspect;
+  // TIP: unselect this and see what happens
+  // out[0] = f;
+  out[1] = 0;
+  out[2] = 0;
+  out[3] = 0;
+  out[4] = 0;
+  out[5] = f;
+  out[6] = 0;
+  out[7] = 0;
+
+  out[8] = 0;
+  out[9] = 0;
+  // TIP: remove - sign and see what happens
+  out[11] = -1;
+
+  out[12] = 0;
+  out[13] = 0;
+  out[15] = 0;
+  if (far != null && far !== Infinity) {
+    //
+    const nf = 1 / (near - far);
+    out[10] = (far + near) * nf;
+
+    // TIP: change the value from 2 to 1 and try zooming in
+    out[14] = 2 * far * near * nf;
+  } else {
+    out[10] = -1;
+    out[14] = -2 * near;
+  }
+  return out;
+}
+
 // TODO:
 // 1. camera.ts - done
 // 2. index.ts -
@@ -481,6 +540,77 @@ WebGPURenderer.prototype.updateRenderPassDescriptor = function () {
     this.depthTextureView();
 };
 
+const app = {
+  // canvas:
+  //   gconf.canvas ??
+  //   (() => {
+  //     const canvas = document.createElement("canvas");
+  //     (gconf.root ?? document.body).appendChild(canvas);
+  //     return canvas;
+  //   })(),
+  keyStates: {},
+  charInputted: [],
+  mouseMoved: false,
+  mouseState: "up",
+  // mousePos: vec2(0, 0),
+  // mouseDeltaPos: vec2(0, 0),
+  time: 0,
+  realTime: 0,
+  skipTime: false,
+  dt: 0.0,
+  scale: 1,
+  isTouch: false,
+  loopID: null,
+  stopped: false,
+  fps: 0,
+  fpsBuf: [],
+  fpsTimer: 0,
+};
+
+window.app = app;
+
+function calcFPS(t) {
+  const realTime = t / 1000;
+  const realDt = realTime - app.realTime;
+
+  app.realTime = realTime;
+
+  if (!app.skipTime) {
+    app.dt = realDt;
+    app.time += app.dt;
+    app.fpsBuf.push(1 / app.dt);
+    app.fpsTimer += app.dt;
+    if (app.fpsTimer >= 1) {
+      app.fpsTimer = 0;
+      app.fps = Math.round(
+        app.fpsBuf.reduce((a, b) => a + b) / app.fpsBuf.length
+      );
+      app.fpsBuf = [];
+    }
+  }
+
+  app.skipTime = false;
+}
+function run(f) {
+  const frame = (t) => {
+    calcFPS(t);
+
+    f();
+
+    // for (const k in app.keyStates) {
+    //   app.keyStates[k] = processBtnState(app.keyStates[k]);
+    // }
+
+    // app.mouseState = processBtnState(app.mouseState);
+    // app.charInputted = [];
+    // app.mouseMoved = false;
+    app.loopID = requestAnimationFrame(frame);
+  };
+
+  app.stopped = false;
+  app.loopID = requestAnimationFrame(frame);
+}
+
 // APP
 export function patu(props) {
   setProps(props);
@@ -495,29 +625,52 @@ export function patu(props) {
   });
   camera.z = 7;
   const scene = new Scene();
+  window.scene = scene;
 
   const renderer = new WebGPURenderer();
   renderer.init(props.canvas).then((success) => {
-    if (!success) return;
+    // RENDER
+    run(() => {
+      if (!success) return;
 
-    scene.add(cube({ x: -2, y: 1 }));
-    scene.add(pyramid({ x: 2 }));
+      scene.add(cube({ x: -2, y: 1 }));
+      scene.add(pyramid({ x: 2 }));
 
-    const doFrame = () => {
-      // ANIMATE
-      const now = Date.now() / 1000;
-      window.scene = scene;
-      for (let object of scene.getObjects()) {
-        // stops rotation of objects
-        object.rotX = Math.sin(now);
-        // object.rotZ = Math.cos(now);
-      }
+      const doFrame = () => {
+        // ANIMATE
+        const now = Date.now() / 1000;
+        for (let object of scene.getObjects()) {
+          // stops rotation of objects
+          object.rotX = Math.sin(now);
+          // object.rotZ = Math.cos(now);
+        }
 
-      // RENDER
-      renderer.frame(camera, scene);
-      requestAnimationFrame(doFrame);
-    };
-    requestAnimationFrame(doFrame);
+        renderer.frame(camera, scene);
+      };
+
+      doFrame();
+    });
+
+    // if (!success) return;
+
+    // scene.add(cube({ x: -2, y: 1 }));
+    // scene.add(pyramid({ x: 2 }));
+
+    // const doFrame = () => {
+    //   // ANIMATE
+    //   const now = Date.now() / 1000;
+    //   window.scene = scene;
+    //   for (let object of scene.getObjects()) {
+    //     // stops rotation of objects
+    //     object.rotX = Math.sin(now);
+    //     // object.rotZ = Math.cos(now);
+    //   }
+
+    //   // RENDER
+    //   renderer.frame(camera, scene);
+    //   requestAnimationFrame(doFrame);
+    // };
+    // requestAnimationFrame(doFrame);
   });
 
   window.onresize = () => {
