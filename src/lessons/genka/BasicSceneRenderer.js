@@ -39,9 +39,9 @@ Camera.prototype.getViewMatrix = function () {
 
   mat4.lookAt(
     viewMatrix,
-    vec3.fromValues(this.x, this.y, this.z),
-    vec3.fromValues(0, 0, 0),
-    vec3.fromValues(0, 1, 0)
+    vec3.fromValues(this.x, this.y, this.z), // eye - p camera position/point - point where our camera is
+    vec3.fromValues(0, 0, 0), // center - direction at which the camera is pointing (out direction)
+    vec3.fromValues(0, 1, 0) // specify up direction vector - useful for tilting
   );
 
   mat4.rotateX(viewMatrix, viewMatrix, this.rotX);
@@ -52,7 +52,7 @@ Camera.prototype.getViewMatrix = function () {
 
 // Private
 Camera.prototype.getProjectionMatrix = function () {
-  const { mat4, vec3 } = props.libs;
+  const { mat4 } = props.libs;
   let projectionMatrix = mat4.create();
   mat4.perspective(
     projectionMatrix,
@@ -65,13 +65,13 @@ Camera.prototype.getProjectionMatrix = function () {
 };
 
 Camera.prototype.getCameraViewProjMatrix = function () {
-  const { mat4, vec3 } = props.libs;
+  const { mat4 } = props.libs;
 
   const viewProjMatrix = mat4.create();
   const view = this.getViewMatrix();
   const proj = this.getProjectionMatrix();
-  mat4.multiply(viewProjMatrix, proj, view);
-  return viewProjMatrix;
+
+  return mat4.multiply(viewProjMatrix, proj, view);
 };
 
 `Module: 2: Vertices ====`;
@@ -353,8 +353,8 @@ RenderObject.prototype.updateTransformationMatrix = function (
   // PROJECT ON CAMERA
   mat4.multiply(
     this.modelViewProjectionMatrix,
-    cameraProjectionMatrix,
-    modelMatrix
+    cameraProjectionMatrix, // C
+    modelMatrix // x y z - rotated and translated model matrix
   );
 };
 
@@ -506,9 +506,11 @@ export function patu(props) {
     const doFrame = () => {
       // ANIMATE
       const now = Date.now() / 1000;
+      window.scene = scene;
       for (let object of scene.getObjects()) {
+        // stops rotation of objects
         object.rotX = Math.sin(now);
-        object.rotZ = Math.cos(now);
+        // object.rotZ = Math.cos(now);
       }
 
       // RENDER
