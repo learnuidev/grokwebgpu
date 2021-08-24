@@ -1,3 +1,67 @@
+const m4 = (() => {
+  function fromScaling(v) {
+    // prettier-ignore
+    return new Float32Array([
+    v[0], 0,    0,    0, // x = 0th index
+    0,    v[1], 0,    0, // y = 5th index
+    0,    0,    v[2], 0, // z = 10th index
+    0,    0,    0,    1
+  ])
+  }
+
+  const fromXRotation = (rad) => {
+    // Perform axis-specific matrix multiplication
+    // prettier-ignore
+    return new Float32Array([
+    1,  0,             0,             0,
+    0,  Math.cos(rad), Math.sin(rad), 0,
+    0, -Math.sin(rad), Math.cos(rad), 0,
+    0, 0,              0,             1     
+  ])
+  };
+
+  const fromYRotation = (rad) => {
+    // Perform axis-specific matrix multiplication
+    // prettier-ignore
+    return new Float32Array([
+    Math.cos(rad), 0, -Math.sin(rad), 0,
+    0,             1,  0,             0,
+    Math.sin(rad), 0,  Math.cos(rad), 0,
+    0,             0,  0,             1     
+  ])
+  };
+
+  const fromZRotation = (rad) => {
+    // Perform axis-specific matrix multiplication
+    // prettier-ignore
+    return new Float32Array([
+     Math.cos(rad), Math.sin(rad), 0,  0,
+    -Math.sin(rad), Math.cos(rad), 0,  0,
+     0,             0,             1,  0,
+     0,             0,             0,  1     
+  ])
+  };
+
+  // Matrix helpers
+  const translate = ([x, y, z]) => {
+    // prettier-ignore
+    return new Float32Array([
+    1, 0, 0, 0,
+    0, 1, 0, 0,
+    0, 0, 1, 0,
+    x, y, z, 1
+  ])
+  };
+
+  return {
+    fromScaling,
+    fromXRotation,
+    fromYRotation,
+    fromZRotation,
+    translate,
+  };
+})();
+
 const updateTransformationMatrix = (
   modelMat,
   translation,
@@ -6,47 +70,86 @@ const updateTransformationMatrix = (
   { libs }
 ) => {
   const { mat4 } = libs;
-  const rotateXMat = mat4.create();
-  const rotateYMat = mat4.create();
-  const rotateZMat = mat4.create();
-  const translateMat = mat4.create();
-  const scaleMat = mat4.create();
+  window.mat4 = mat4;
 
-  rotation = rotation || [0, 0, 0];
+  rotation = rotation || [2, 0, 0];
   translation = translation || [0, 0, 0];
   scaling = scaling || [2, 2, 1];
 
   //perform indivisual transformations
-  mat4.fromTranslation(translateMat, translation);
-  mat4.fromXRotation(rotateXMat, rotation[0]);
-  mat4.fromYRotation(rotateYMat, rotation[1]);
-  mat4.fromZRotation(rotateZMat, rotation[2]);
-  mat4.fromScaling(scaleMat, scaling);
+
+  const translateMat = m4.translate(translation);
+  window.translateMat = translateMat;
+  `[1   0   0  0
+    0   1   0  0
+    0   0   1  0
+    0, -5 -10  1]
+    ]
+  `;
+
+  const rotateXMat = m4.fromXRotation(rotation[0]);
+  const rotateYMat = m4.fromYRotation(rotation[1]);
+  const rotateZMat = m4.fromZRotation(rotation[2]);
+  const scaleMat = m4.fromScaling(scaling);
 
   //combine all transformation matrices together to form a final transform matrix: modelMat
+  window.modelA = modelMat.slice();
+  // == console.log(window.modelA);
+  `[1, 0, 0, 0,
+    0, 1, 0, 0,
+    0, 0, 1, 0,
+    0, 0, 0, 1,]
+  `;
+
   mat4.multiply(modelMat, rotateXMat, scaleMat);
+  window.modelX = modelMat.slice();
+  // == console.log(window.modelX);
+  `[ 2, 0, 0, 0,
+     0, 2, 0, 0,
+     0, 0, 1, 0,
+     0, 0, 0, 1]
+  `;
   mat4.multiply(modelMat, rotateYMat, modelMat);
+  window.modelY = modelMat.slice();
+
+  `[ 2.1612091064453125, 0, 3.3658838272094727, 0, 
+     0,                  2, 0,                  0,
+    -2.5244128704071045, 0, 1.6209068298339844, 0,
+     0,                  0, 0,                  1,`;
+
   mat4.multiply(modelMat, rotateZMat, modelMat);
+  window.modelZ = modelMat.slice();
+  `[ 2.1612091064453125, 0, 3.3658838272094727, 0,
+     0,                  2, 0,                  0,
+    -2.5244128704071045, 0, 1.6209068298339844, 0,
+     0,                  0, 0,                  1,]
+  `;
+
   mat4.multiply(modelMat, translateMat, modelMat);
+  window.result = modelMat.slice();
+  `[ 2.1612091064453125,  0,   3.3658838272094727, 0,
+     0,                   2,   0,                  0,
+    -2.5244128704071045,  0,   1.6209068298339844, 0,
+     0,                  -5, -10,                  1,]`;
 };
 
 const createViewProjection = ({ isPerspective, aspectRatio }, props) => {
   // Returns a projection matrix
-  const perspectiveCam = ({ fovy, aspectRatio, near, far }, { libs }) => {
-    const projectionMatrix = libs.mat4.create();
-    libs.mat4.perspective(projectionMatrix, fovy, aspectRatio, near, far);
+  const perspectiveCam = ({ fovy, aspectRatio, near, far }) => {
+    const projectionMatrix = mat4.create();
+    mat4.perspective(projectionMatrix, fovy, aspectRatio, near, far);
     return projectionMatrix;
   };
 
   // Returns a projection matrix
-  const orthoCam = ({ fovy, aspectRatio, near, far }, { libs }) => {
-    const projectionMatrix = libs.mat4.create();
-    libs.mat4.ortho(projectionMatrix, -4, 4, -3, 3, -1, 6);
+  const orthoCam = ({ fovy, aspectRatio, near, far }) => {
+    const projectionMatrix = mat4.create();
+    mat4.ortho(projectionMatrix, -4, 4, -3, 3, -1, 6);
     return projectionMatrix;
   };
 
   const {
-    libs: { mat4 }
+    libs: { mat4 },
   } = props;
 
   const eyePosition = [2, 2, 4];
@@ -61,7 +164,7 @@ const createViewProjection = ({ isPerspective, aspectRatio }, props) => {
           fovy: (2 * Math.PI) / 5,
           aspectRatio,
           near: 0.1,
-          far: 100.0
+          far: 100.0,
         },
         props
       )
@@ -73,14 +176,14 @@ const createViewProjection = ({ isPerspective, aspectRatio }, props) => {
     eye: eyePosition,
     center,
     zoomMax: 100,
-    zoomSpeed: 2
+    zoomSpeed: 2,
   };
 
   return {
     viewMatrix,
     projectionMatrix,
     viewProjectionMatrix,
-    cameraOption
+    cameraOption,
   };
 };
 
@@ -89,12 +192,16 @@ const gpuInit = async ({ canvas }) => {
   const adapter = await navigator.gpu.requestAdapter();
   const device = await adapter.requestDevice();
   const context = canvas.getContext("webgpu");
-  const swapChainFormat = "bgra8unorm";
+  window.device = device;
+  window.context = context;
+  window.adapter = adapter;
+  // const swapChainFormat = "bgra8unorm";
+  const swapChainFormat = context.getPreferredFormat(adapter);
 
   // Configure swap chain
   context.configure({
     device: device,
-    format: swapChainFormat
+    format: swapChainFormat,
   });
 
   `Comment: Fun fact ===
@@ -115,14 +222,14 @@ const gpuInit = async ({ canvas }) => {
   return {
     device,
     context,
-    swapChainFormat
+    swapChainFormat,
   };
 };
 
 `==================================================================`;
 `======================= createCube ==============================`;
 
-export const createCube = async props => {
+export const createCube = async (props) => {
   `Step 1: Init`;
   // a. Custom npm libs
   const { libs, canvas } = props;
@@ -135,7 +242,7 @@ export const createCube = async props => {
   `Step 1: CREATE GPU Device AND WebGPU Context`;
   // c. Create adapter, device and WebGPU context
   const { device, context, swapChainFormat } = await gpuInit({
-    canvas
+    canvas,
   });
 
   `==================================================================`;
@@ -186,7 +293,7 @@ export const createCube = async props => {
     [-1, -1, -1, 0, 0, 0, 0, 0],
     [1, -1, -1, 1, 0, 0, 1, 0],
     [1, -1, 1, 1, 0, 1, 1, 1],
-    [-1, -1, -1, 0, 0, 0, 0, 0]
+    [-1, -1, -1, 0, 0, 0, 0, 0],
   ];
 
   const data = new Float32Array(vertexData.flat());
@@ -196,7 +303,7 @@ export const createCube = async props => {
   const vertexBuffer = device.createBuffer({
     size: data.byteLength,
     usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-    mappedAtCreation: true
+    mappedAtCreation: true,
   });
 
   new Float32Array(vertexBuffer.getMappedRange()).set(data);
@@ -216,8 +323,8 @@ export const createCube = async props => {
           };
           [[binding(0), group(0)]] var<uniform> uniforms : Uniforms;
           struct Output {
-              [[builtin(position)]] Position : vec4<f32>;
-              [[location(0)]] vColor : vec4<f32>;
+              [[builtin(position)]] Position: vec4<f32>;
+              [[location(0)]] vColor: vec4<f32>;
           };
           [[stage(vertex)]]
           fn main([[location(0)]] pos: vec4<f32>, [[location(1)]] color: vec4<f32>) -> Output {
@@ -230,14 +337,15 @@ export const createCube = async props => {
     fragment: `
           [[stage(fragment)]]
           fn main([[location(0)]] vColor: vec4<f32>) -> [[location(0)]] vec4<f32> {
-              return vColor;
-          }`
+            // return vColor;
+            return vec4<f32>(0.6, 0.7, 0.6, 1.0);
+          }`,
   };
 
   const pipeline = device.createRenderPipeline({
     vertex: {
       module: device.createShaderModule({
-        code: shaders.vertex
+        code: shaders.vertex,
       }),
       entryPoint: "main",
       buffers: [
@@ -248,38 +356,38 @@ export const createCube = async props => {
               // position
               shaderLocation: 0,
               offset: 0,
-              format: "float32x3"
+              format: "float32x3",
             },
             {
               // color
               shaderLocation: 1,
               offset: cubeColorOffset, // 12
-              format: "float32x3"
-            }
-          ]
-        }
-      ]
+              format: "float32x3",
+            },
+          ],
+        },
+      ],
     },
     fragment: {
       module: device.createShaderModule({
-        code: shaders.fragment
+        code: shaders.fragment,
       }),
       entryPoint: "main",
       targets: [
         {
-          format: swapChainFormat
-        }
-      ]
+          format: swapChainFormat,
+        },
+      ],
     },
     primitive: {
       topology: "triangle-list",
-      cullMode: "back"
+      cullMode: "back",
     },
     depthStencil: {
       format: "depth24plus-stencil8",
       depthWriteEnabled: true,
-      depthCompare: "less"
-    }
+      depthCompare: "less",
+    },
   });
 
   `Step 4: CREATE Camera`;
@@ -290,7 +398,7 @@ export const createCube = async props => {
   const viewProjection = createViewProjection(
     {
       isPerspective,
-      aspectRatio: canvas.width / canvas.height
+      aspectRatio: canvas.width / canvas.height,
     },
     props
   );
@@ -304,7 +412,7 @@ export const createCube = async props => {
   //
   const sceneUniformBuffer = device.createBuffer({
     size: 64,
-    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   });
   // line 354: renderPass.setBindGroup(0, sceneUniformBindGroup);
   const sceneUniformBindGroup = device.createBindGroup({
@@ -315,10 +423,10 @@ export const createCube = async props => {
         resource: {
           buffer: sceneUniformBuffer,
           offset: 0,
-          size: 64
-        }
-      }
-    ]
+          size: 64,
+        },
+      },
+    ],
   });
 
   `Step 5: Draw`;
@@ -327,7 +435,7 @@ export const createCube = async props => {
     const depthTexture = device.createTexture({
       size: [canvas.width, canvas.height, 1],
       format: "depth24plus-stencil8",
-      usage: GPUTextureUsage.RENDER_ATTACHMENT
+      usage: GPUTextureUsage.RENDER_ATTACHMENT,
     });
     // l352: const renderPass = commandEncoder.beginRenderPass(renderPassDescription);
     const renderPassDescription = {
@@ -335,16 +443,16 @@ export const createCube = async props => {
         {
           view: context.getCurrentTexture().createView(),
           loadValue: [0.5, 0.5, 0.8, 1],
-          StoreOp: "store"
-        }
+          StoreOp: "store",
+        },
       ],
       depthStencilAttachment: {
         view: depthTexture.createView(),
         depthLoadValue: 1,
         depthStoreOp: "store",
         stencilLoadValue: 0,
-        stencilStoreOp: "store"
-      }
+        stencilStoreOp: "store",
+      },
     };
 
     updateTransformationMatrix(

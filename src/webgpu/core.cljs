@@ -15,7 +15,7 @@
    [webgpu.lessons.genka.basic-scene-renderer :as bsr]))
 
 (defn ^:dev/after-load start []
-  (bsr/app))
+  (eleven/app))
 
 (defn ^:export init []
   (start))
