@@ -1,7 +1,8 @@
-function randomFloats(elementCount) {
+export function randomFloats(elementCount) {
   const matrix = [];
   for (let i = 0; i < elementCount; i++) {
-    matrix.push(Math.random() * 10);
+    // matrix.push(Math.random() * 10);
+    matrix.push(i);
   }
   return matrix;
 }
@@ -17,7 +18,7 @@ export async function computeOnGPU(matrixA, matrixB, matrixDimension) {
   const gpuMatrixA = device.createBuffer({
     size: matrixSize,
     usage: GPUBufferUsage.STORAGE,
-    mappedAtCreation: true,
+    mappedAtCreation: true
   });
 
   new Float32Array(gpuMatrixA.getMappedRange()).set(matrixA);
@@ -26,7 +27,7 @@ export async function computeOnGPU(matrixA, matrixB, matrixDimension) {
   const gpuMatrixB = device.createBuffer({
     size: matrixSize,
     usage: GPUBufferUsage.STORAGE,
-    mappedAtCreation: true,
+    mappedAtCreation: true
   });
 
   new Float32Array(gpuMatrixB.getMappedRange()).set(matrixB);
@@ -34,7 +35,7 @@ export async function computeOnGPU(matrixA, matrixB, matrixDimension) {
 
   const gpuMatrixC = device.createBuffer({
     size: matrixSize,
-    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
+    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC
   });
 
   // Slide 4a: GPU program source.
@@ -58,28 +59,41 @@ export async function computeOnGPU(matrixA, matrixB, matrixDimension) {
     if (global_id.x >= ${matrixDimension}u || global_id.y >= ${matrixDimension}u) {
       return;
     }
-    
+
     let resultCell = global_id.xy;
     let resultIndex = resultCell.y + resultCell.x * ${matrixDimension}u;
 
+    var index : f32 = 0.0;
     var result : f32 = 0.0;
     for (var i = 0u; i < ${matrixDimension}u; i = i + 1u) {
       let aCell = i + resultCell.x * ${matrixDimension}u;
       let bCell = resultCell.y + i * ${matrixDimension}u;
       result = result + matrixA.data[aCell] * matrixB.data[bCell];
+      // result = global_id.x + global_id.y;
+      // result = 4.0 + 400.0 * 765.45 + 42.0;
+      // result = matrixA.data[i];
+      // result = (matrixA.data[i] * matrixB.data[i]);
+      index = index + 0.1;
+      result = index;
+      // matrixC.data[resultIndex] = result;
     }
 
+    result = matrixA.data[resultIndex] * matrixB.data[resultIndex];
+    // result = resultIndex;
+
+    // matrixC.data[resultIndex] = matrixA.data[resultIndex];
     matrixC.data[resultIndex] = result;
+    // matrixC.data[resultIndex] = matrixA.data[resultIndex];
   }`;
 
   // Slide 4b: Compile the GPU program.
   const computePipeline = device.createComputePipeline({
     compute: {
       module: device.createShaderModule({
-        code: wgslSource,
+        code: wgslSource
       }),
-      entryPoint: "main",
-    },
+      entryPoint: "main"
+    }
   });
 
   // Slide 3: Create the data “group”.
@@ -88,8 +102,8 @@ export async function computeOnGPU(matrixA, matrixB, matrixDimension) {
     entries: [
       { binding: 0, resource: { buffer: gpuMatrixA } },
       { binding: 1, resource: { buffer: gpuMatrixB } },
-      { binding: 2, resource: { buffer: gpuMatrixC } },
-    ],
+      { binding: 2, resource: { buffer: gpuMatrixC } }
+    ]
   });
 
   // Slide 5: Encode the compute commands.
@@ -107,7 +121,7 @@ export async function computeOnGPU(matrixA, matrixB, matrixDimension) {
   // Slide 6: Encode the readback commands.
   const gpuReadBuffer = device.createBuffer({
     size: matrixSize,
-    usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+    usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ
   });
 
   commandEncoder.copyBufferToBuffer(
@@ -209,7 +223,7 @@ async function benchmark() {
       (gpuTime / 1000).toFixed(3) + "s";
     gpuTimes.push(gpuTime);
   }
-  const average = (arr) => arr.reduce((acc, v) => acc + v) / arr.length;
+  const average = arr => arr.reduce((acc, v) => acc + v) / arr.length;
   console.log((average(gpuTimes) / 1000).toFixed(3));
 
   const [cpuResult, cpuTime] = await computeOnCPU(
