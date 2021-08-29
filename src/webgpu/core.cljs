@@ -14,10 +14,11 @@
   ;;  [webgpu.lessons.ch06.cube-vertex-colors :as eleven]
   ;;  [webgpu.lessons.genka.basic-scene-renderer :as bsr]
    ;; Computing Examples
-   [webgpu.compute.one :as compute]))
+   ; [webgpu.compute.one :as compute]
+   [webgpu.lessons.twelve-texture :as texture]))
 
 (defn ^:dev/after-load start []
-  (compute/app))
+  (texture/app))
 
 (defn ^:export init []
   (start))
