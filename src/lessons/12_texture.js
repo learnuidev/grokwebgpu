@@ -190,6 +190,7 @@ export const initTexture = async ({ canvas, debug }) => {
   });
 
   // image code
+  // throws cors error when url is directly used
   let imageUrl =
     "http://austin-eng.com/webgpu-samples/_next/static/e04932ba9c013b60ddb249577c386914.png";
   imageUrl = "assets/image.png";
