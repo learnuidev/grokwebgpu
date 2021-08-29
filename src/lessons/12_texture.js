@@ -193,19 +193,25 @@ export const initTexture = async ({ canvas, debug }) => {
     minFilter: "linear"
   });
 
+  async function getImageBitmap(imageUrl) {
+    const img = document.createElement("img");
+    img.src = imageUrl;
+    await img.decode();
+    return await createImageBitmap(img);
+  }
+
+  // create texture
+  // step 1: Image
   // image code
   // throws cors error when url is directly used
   let imageUrl =
     "http://austin-eng.com/webgpu-samples/_next/static/e04932ba9c013b60ddb249577c386914.png";
   imageUrl = "assets/image.png";
 
-  const img = document.createElement("img");
-  img.src = imageUrl;
-  await img.decode();
-  const imageBitmap = await createImageBitmap(img);
-
-  // create texture
+  const imageBitmap = await getImageBitmap(imageUrl);
   const [srcWidth, srcHeight] = [imageBitmap.width, imageBitmap.height];
+
+  // step 2: texture
   const imageTexture = device.createTexture({
     size: [srcWidth, srcHeight, 1],
     format: "rgba8unorm",
