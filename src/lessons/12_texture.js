@@ -137,6 +137,10 @@ export const initTexture = async ({ canvas, debug }) => {
     canvas.clientHeight * devicePixelRatio
   ];
 
+  // Needed for correctly viewing image
+  canvas.height = 600;
+  canvas.width = 600;
+
   const presentationFormat = context.getPreferredFormat(adapter);
 
   // swap chain
