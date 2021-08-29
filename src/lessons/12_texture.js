@@ -124,7 +124,7 @@ fn main(
 const tileDim = 128;
 const batch = [4, 4];
 
-export const initTexture = async ({ canvas, debug }) => {
+export const initTexture = async ({ canvas, debug, gui }) => {
   const adapter = await navigator.gpu.requestAdapter();
   const device = await adapter.requestDevice();
 
@@ -378,6 +378,12 @@ export const initTexture = async ({ canvas, debug }) => {
       new Uint32Array([settings.filterSize, blockDim])
     );
   };
+
+  gui
+    .add(settings, "filterSize", 1, 33)
+    .step(2)
+    .onChange(updateSettings);
+  gui.add(settings, "iterations", 1, 10).step(1);
 
   updateSettings();
 
