@@ -155,7 +155,7 @@ export const initTexture = async ({ canvas, debug }) => {
   const computeShaderModule = device.createShaderModule({
     code: computeShader
   });
-  const blurPipeline = device.createComputePipeline({
+  const computePipeline = device.createComputePipeline({
     compute: {
       module: computeShaderModule,
       entryPoint: "main"
@@ -266,7 +266,7 @@ export const initTexture = async ({ canvas, debug }) => {
 
   // Bind Group
   const computeConstants = device.createBindGroup({
-    layout: blurPipeline.getBindGroupLayout(0),
+    layout: computePipeline.getBindGroupLayout(0),
     entries: [
       {
         binding: 0,
@@ -282,7 +282,7 @@ export const initTexture = async ({ canvas, debug }) => {
   });
 
   const computeBindGroup0 = device.createBindGroup({
-    layout: blurPipeline.getBindGroupLayout(1),
+    layout: computePipeline.getBindGroupLayout(1),
     entries: [
       {
         binding: 1,
@@ -302,7 +302,7 @@ export const initTexture = async ({ canvas, debug }) => {
   });
 
   const computeBindGroup1 = device.createBindGroup({
-    layout: blurPipeline.getBindGroupLayout(1),
+    layout: computePipeline.getBindGroupLayout(1),
     entries: [
       {
         binding: 1,
@@ -322,7 +322,7 @@ export const initTexture = async ({ canvas, debug }) => {
   });
 
   const computeBindGroup2 = device.createBindGroup({
-    layout: blurPipeline.getBindGroupLayout(1),
+    layout: computePipeline.getBindGroupLayout(1),
     entries: [
       {
         binding: 1,
@@ -358,7 +358,7 @@ export const initTexture = async ({ canvas, debug }) => {
   const settings = {
     // filterSize: 15,
     // iterations: 2
-    filterSize: 1,
+    filterSize: 10,
     iterations: 2
   };
 
@@ -375,14 +375,9 @@ export const initTexture = async ({ canvas, debug }) => {
 
   updateSettings();
 
-  function frame() {
-    // Sample is no longer the active page.
-    if (!canvas) return;
-
-    const commandEncoder = device.createCommandEncoder();
-
+  function updateCompute(commandEncoder) {
     const computePass = commandEncoder.beginComputePass();
-    computePass.setPipeline(blurPipeline);
+    computePass.setPipeline(computePipeline);
     computePass.setBindGroup(0, computeConstants);
 
     computePass.setBindGroup(1, computeBindGroup0);
@@ -412,8 +407,10 @@ export const initTexture = async ({ canvas, debug }) => {
     }
 
     computePass.endPass();
+  }
 
-    const passEncoder = commandEncoder.beginRenderPass({
+  function updateDrawing(commandEncoder) {
+    const renderPass = commandEncoder.beginRenderPass({
       colorAttachments: [
         {
           view: context.getCurrentTexture().createView(),
@@ -423,10 +420,19 @@ export const initTexture = async ({ canvas, debug }) => {
       ]
     });
 
-    passEncoder.setPipeline(renderPipeline);
-    passEncoder.setBindGroup(0, showResultBindGroup);
-    passEncoder.draw(6, 1, 0, 0);
-    passEncoder.endPass();
+    renderPass.setPipeline(renderPipeline);
+    renderPass.setBindGroup(0, showResultBindGroup);
+    renderPass.draw(6, 1, 0, 0);
+    renderPass.endPass();
+  }
+
+  function frame() {
+    // Sample is no longer the active page.
+    if (!canvas) return;
+
+    const commandEncoder = device.createCommandEncoder();
+    updateCompute(commandEncoder);
+    updateDrawing(commandEncoder);
     device.queue.submit([commandEncoder.finish()]);
 
     requestAnimationFrame(frame);
@@ -440,7 +446,7 @@ export const initTexture = async ({ canvas, debug }) => {
     presentationSize,
     // comptute pipeline
     computeShader,
-    blurPipeline,
+    computePipeline,
     // graphics pipeline
     graphicsShader,
     renderPipeline,
