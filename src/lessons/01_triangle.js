@@ -1,22 +1,41 @@
 const ShadersDoc = {
   vertex: `                                    == A Basic Vertex Shader ==
-  - As in Metal Shading Language, we can define a struct that contains the outputs of our
-    vertex shader. We are obligated to provide a vec4<f32> (a four-element floating-point vector) containing
-    the clip-space vertex position, attributed with [[builtin(position)]].
-  - In this sample, we also return a vertex color, which will be used by the fragment shader:
 
+  // A: Structs
+
+  - We can define a struct that contains the output of our
+    vertex shader. It consists of two fields
+  - We are obligated to provide a vec4<f32> (a four-element floating-point vector)
+    containing the clip-space vertex position, attributed with
+    [[builtin(position)]].
+  - The [[builtin(position)]] bit tells WGPU that this is the value we want
+    to use as the vertex's clip coordinates. This is analogous to
+    GLSL's gl_Position variable.
+  - In this sample, we also return a vertex color, which will be
+    used by the fragment shader. It is a vec4<f32> as well. It is attributed
+    with [[location(0)]]
+  - The [[location(0)]] bit tells WebGPU that this is the value we want to
+    use as the fragments color values. this is analogous to GLSL's gl_FragColor
 
     struct VertexOut {
       [[builtin(position)]] position : vec4<f32>;
       [[location(0)]] color : vec4<f32>;
     };
 
-  - The vertex shader itself is a function attributed with [[stage(vertex)]], similar to MSL’s vertex keyword.
-    Vertex function parameters indicate where their values should be fetched from with location attributes.
-    We will see shortly how to create a mapping from these location indices to the vertex buffers we bind when drawing.
+  // B: Vertex Function
 
-  - In this sample, the vertex function simply constructs an instance of the output struct,
-    populates it with the fetched vertex data, and returns it:
+  - The vertex shader itself is a function attributed with [[stage(vertex)]],
+    similar to MSL’s vertex keyword.
+
+  - Vertex function parameters indicate where their values should
+    be fetched from with location attributes.
+
+  - We will see shortly how to create a mapping from these location
+    indices to the vertex buffers we bind when drawing.
+
+  - In this sample, the vertex function simply constructs an instance
+    of the output struct, populates it with the fetched vertex data,
+    and returns it:
 
 
     [[stage(vertex)]]
@@ -28,6 +47,16 @@ const ShadersDoc = {
       output.color = color;
       return output;
     }
+
+  - The next part of the shader code is the main function.
+  - We are using [[stage(vertex)]] to mark this function as a
+    valid entry point for a vertex shader.
+  - We expect two vec4<f32>'s called position and color which gets its value from
+    [[llocation(0)]] and [[location[1]]] respectively
+
+  - We then declare a variable called output using our VertexOut struct.
+  - We set the position and color attributes and return output struct
+  - This value becomes first input argument of fragment shader function
   `,
   frag: `                                     == A Basic Fragment Shader ==
   - The fragment shader’s job is to return a color for its pixel based on its inputs.
@@ -39,17 +68,19 @@ const ShadersDoc = {
       return fragData.color;
     }
 
-  - The location attribute on the return type indicates the index of the color attachment
-    to which the color should be written. In Metal, a single vector return value is inferred
-    to correspond to the first color attachment. In WGSL, we are obligated to provide this index explicitly.
+  - The location attribute on the return type indicates the index of
+    the color attachment to which the color should be written.
+  - In Metal, a single vector return value is inferred to correspond to
+    the first color attachment.
+  - In WGSL, we are obligated to provide this index explicitly.
+  - This completes the shader code for the sample. We’ll see in the
+    next section how to incorporate this shader code into a complete
+    render pipeline.
 
-  - This completes the shader code for the sample. We’ll see in the next section how to incorporate this
-    shader code into a complete render pipeline.
-
-`,
+`
 };
 
-const Shaders = (color) => {
+const Shaders = color => {
   const vertex = `
         [[stage(vertex)]]
         fn main([[builtin(vertex_index)]] VertexIndex: u32) -> [[builtin(position)]] vec4<f32> {
@@ -71,22 +102,67 @@ const Shaders = (color) => {
   return { vertex, fragment };
 };
 
+`Comment: How do we use the shaders?
+ Answer:
+ Inside device.createRenderPipeline method
+
+ renderPipelineDescriptor = {
+   //
+   vertex: {
+     module: vertShaderModule,
+     entryPoint: "main",
+     buffers: [],
+   },
+
+   fragment: {
+     module: fragShaderModule,
+     entryPoint: "main",
+     targets: [
+       {
+         format: swapChainFormat
+       }
+     ]
+   },
+   primitiveTopology: "triangle-list"
+ }
+
+ const pipeline = device.createRenderPipeline(renderPipelineDescriptor);
+
+ Two things to note here:
+
+- Here you can specify which function inside of the shader should be called,
+  which is known as the entryPoint. These are the functions we marked
+  with [[stage(vertex)]] and [[stage(fragment)]]
+- The buffers field inside vertex tells webGPU what type of vertices we
+  want to pass to the vertex shader. We're specifying the vertices
+  in the vertex shader itself so we'll leave this empty. We'll put
+  something there in the next tutorial.
+- We need fragments becuase we want to store color data to the swap_chain.
+- The targets field tells webGPU what color outputs it should set up.
+  Currently we only need one for the swapchain. We use the swapchain's
+  format so that copying to it is easy.
+`;
+
 `Comment: How to create a triangle`;
 const CreateTriangle = async ({ color = "(1.0,1.0,1.0,1.0)", canvas }) => {
   ` === Step 1 : Access GPU Adapter ===
     Access the GPU (adapter + device) (https://developers.google.com/web/updates/2019/08/get-started-with-gpu-compute-on-the-web)
-     - Accessing the GPU is easy in WebGPU.
-       Calling navigator.gpu.requestAdapter() returns a JavaScript promise that will asynchronously resolve with a GPU adapter.
-       Think of this adapter as the graphics card.
-       It can either be integrated (on the same chip as the CPU) or discrete (usually a PCIe card that is more performant but uses more power).
+     - Accessing the GPU is easy in WebGPU. Calling navigator.gpu.requestAdapter()
+       returns a JavaScript promise that will asynchronously resolve with a GPU
+       adapter. Think of this adapter as the graphics card.
+     - It can either be integrated (on the same chip as the CPU) or discrete
+       (usually a PCIe card that is more performant but uses more power).
   `;
   const adapter = await navigator.gpu.requestAdapter();
 
   ` === Step 2 Access GPU Device ===
-   - Once you have the GPU adapter, call adapter.requestDevice() to get a promise that will resolve with a GPU device you’ll
-     use to do some GPU computation.
-   - This device object provides a context to work with the hardware and an interface to create GPU objects
-     such as buffers and textures, and execute commands on the device. - Practical WebGPU Graphics, Chapter 2.13
+   - Once you have the GPU adapter, call adapter.requestDevice() to get a
+     promise that will resolve with a GPU device you’ll use to do some
+     GPU computation.
+   - This device object provides a context to work with the hardware and
+     an interface to create GPU objects such as buffers and textures,
+     and execute commands on the device.
+       - Practical WebGPU Graphics, Chapter 2.13
   `;
   const device = await adapter.requestDevice();
 
@@ -158,7 +234,7 @@ const CreateTriangle = async ({ color = "(1.0,1.0,1.0,1.0)", canvas }) => {
 
   context.configure({
     device: device,
-    format: swapChainFormat,
+    format: swapChainFormat
   });
   `By passing the device to the configure() function, we create a linkage between the GPU and the canvas.`;
 
@@ -211,11 +287,11 @@ const CreateTriangle = async ({ color = "(1.0,1.0,1.0,1.0)", canvas }) => {
 
   `;
   const vertShaderModule = device.createShaderModule({
-    code: shader.vertex,
+    code: shader.vertex
   });
 
   const fragShaderModule = device.createShaderModule({
-    code: shader.fragment,
+    code: shader.fragment
   });
 
   `Step 5.2: Render Pipeline Descriptors
@@ -242,18 +318,18 @@ const CreateTriangle = async ({ color = "(1.0,1.0,1.0,1.0)", canvas }) => {
   const pipeline = device.createRenderPipeline({
     vertex: {
       module: vertShaderModule,
-      entryPoint: "main",
+      entryPoint: "main"
     },
     fragment: {
       module: fragShaderModule,
       entryPoint: "main",
       targets: [
         {
-          format: swapChainFormat,
-        },
-      ],
+          format: swapChainFormat
+        }
+      ]
     },
-    primitiveTopology: "triangle-list",
+    primitiveTopology: "triangle-list"
   });
   ` Step 5.2: Render Pipeline Descriptors Cont.
    - The pipeline requires the vertex and fragment attributes, which corresponds to
@@ -351,9 +427,9 @@ const CreateTriangle = async ({ color = "(1.0,1.0,1.0,1.0)", canvas }) => {
         {
           view: context.getCurrentTexture().createView(),
           loadValue: { r: 0.5, g: 0.5, b: 0.8, a: 1.0 }, //background color
-          storeOp: "store",
-        },
-      ],
+          storeOp: "store"
+        }
+      ]
     }
   );
 
@@ -376,5 +452,5 @@ const CreateTriangle = async ({ color = "(1.0,1.0,1.0,1.0)", canvas }) => {
 
 export default {
   Shaders,
-  CreateTriangle,
+  CreateTriangle
 };

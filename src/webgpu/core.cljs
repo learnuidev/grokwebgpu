@@ -15,10 +15,12 @@
   ;;  [webgpu.lessons.genka.basic-scene-renderer :as bsr]
    ;; Computing Examples
    ; [webgpu.compute.one :as compute]
-   [webgpu.lessons.twelve-texture :as texture]))
+   ; [webgpu.lessons.twelve-texture :as texture]
+   ;; Book
+   [webgpu.book.one :as one]))
 
 (defn ^:dev/after-load start []
-  (texture/app))
+  (one/app))
 
 (defn ^:export init []
   (start))
