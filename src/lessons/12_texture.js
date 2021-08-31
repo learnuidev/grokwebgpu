@@ -124,7 +124,7 @@ fn main(
 const tileDim = 128;
 const batch = [4, 4];
 
-export const initTexture = async ({ canvas, debug, gui }) => {
+export const initTexture = async ({ canvas, debug, gui, image }) => {
   const adapter = await navigator.gpu.requestAdapter();
   const device = await adapter.requestDevice();
 
@@ -191,8 +191,39 @@ export const initTexture = async ({ canvas, debug, gui }) => {
   const sampler = device.createSampler({
     magFilter: "linear",
     minFilter: "linear"
+    // mipmapFilter: "linear"
+    // addressModeU: "repeat",
+    // addressModeV: "repeat"
+    // addressModeU: "mirror-repeat",
+    // addressModeV: "mirror-repeat"
+    // addressModeU: "clamp-to-edge",
+    // addressModeV: "clamp-to-edge"
   });
 
+  /*
+    Here, the GPUAddressMode property describes the behavior of the
+    sampler if the sample footprint extends beyond the bounds of the
+    sample texture.
+
+    There is a separate address mode for each direction in the texture coordinate system.
+    The address mode has three options:
+    - clamp-to-edge: Texture coordinates are clamped between [0, 1].
+    - repeat: Texture coordinates wrap to the other side of the texture.
+    - mirror-repeat: Texture coordinates wrap to the other side of the texture, but the
+      texture is flipped when the integer part of the coordinate is odd.
+
+    The mirror-repeat mode can eliminate visible seams between the
+    texture copies. In WebGPU, texture coordinates are usually input
+    to the vertex shader as an attribute of type vec2.
+    They are communicated to the fragment shader in a varying
+    variable. The vertex shader will then copy the value of the
+    attribute into the varying variable. In fragment shader, we use the
+    texture coordinates to sample a texture. The WGSL function for
+    sampling an ordinary texture can be expressed as:
+
+    textureSample(textureData, textureSampler, textureCoordinates);
+
+  */
   async function getImageBitmap(imageUrl) {
     const img = document.createElement("img");
     img.src = imageUrl;
@@ -206,10 +237,12 @@ export const initTexture = async ({ canvas, debug, gui }) => {
   // throws cors error when url is directly used
   let imageUrl =
     "http://austin-eng.com/webgpu-samples/_next/static/e04932ba9c013b60ddb249577c386914.png";
-  imageUrl = "assets/image.png";
+  imageUrl = image || "assets/image.png";
 
   const imageBitmap = await getImageBitmap(imageUrl);
+  // const imageBitmap = await getImageBitmap(image);
   const [srcWidth, srcHeight] = [imageBitmap.width, imageBitmap.height];
+  // const [srcWidth, srcHeight] = [100, 100];
 
   // step 2: texture
   const imageTexture = device.createTexture({
