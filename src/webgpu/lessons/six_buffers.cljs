@@ -1,10 +1,10 @@
 (ns webgpu.lessons.six-buffers
-  (:require ["/lessons/06_buffers.js" :refer [makeGlobal createSquare]]
+  (:require ["/lessons/06_buffers.js" :as buffers :refer [makeGlobal createSquare]]
             [cljs.repl :refer [doc]]))
 
 (comment
-  "Make everything for interactive learning experience"
-  (makeGlobal buffers))
+  "Make everything for interactive learning experience")
+(makeGlobal buffers)
 
   ; const vertexData =
   ;   flatten(vertData) ||
