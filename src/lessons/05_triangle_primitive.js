@@ -143,7 +143,9 @@ export const CreatePrimitive = async ({
   primitiveType = "triangle-list",
   canvas,
   vert,
-  frag
+  frag,
+  background,
+  draw
 }) => {
   let indexFormat = undefined;
   `"Date: 6:12PM Monday, 16th August 2021 - added primitiveType === 'line-strip'`;
@@ -154,10 +156,11 @@ export const CreatePrimitive = async ({
   `Step 1: Create adapter, device and context`;
   const adapter = await navigator.gpu.requestAdapter();
   const device = await adapter.requestDevice();
-  const context = canvas.getContext("webgpu");
+  const context = canvas.getContext("webgpu", { anitialias: false });
 
   `Step 2: Configure swap chain by calling configure method`;
-  const format = "bgra8unorm";
+  // const format = "bgra8unorm";
+  const format = context.getPreferredFormat(adapter);
   context.configure({
     device: device,
     format: format
@@ -199,12 +202,16 @@ export const CreatePrimitive = async ({
   // Step 4: Create command encoder
   const commandEncoder = device.createCommandEncoder();
 
-  // Step 5: Create render pass
-  // Step 5.1: Create Texture view
-  // This gets used in beginRenderPass method
-  const textureView = context.getCurrentTexture().createView();
+  // Step 5: Rendering - Begin render pass
+  // Accepts: 1 prop: colorAttachments
+  // - array of object with 3 properties
+  // - view: context.getCurrentTexture().createView();
+  // - loadvalue: map or array
+  // - storeOp: string
 
-  // ==== Rendering! ====
+  // We are saying render into this view, loadValue is background color and store op  says to store all the information
+  // TASK: change the stopreOp to
+
   `
   Rendering in WebGPU takes place during a Render Pass, which is described through a GPURenderPassDescriptor.
   The render pass descriptor specifies the images to bind to the output slots written from the fragment shader,
@@ -219,15 +226,17 @@ export const CreatePrimitive = async ({
   const renderPass = commandEncoder.beginRenderPass({
     colorAttachments: [
       {
-        view: textureView,
-        loadValue: [0.5, 0.3, 0.6, 1.0], //background color
+        view: context.getCurrentTexture().createView(), // A GPUTextureView describing the texture subresource that will be output to for this color attachment.
+        loadValue: background || [0.5, 0.3, 0.6, 1.0], //background color -
         storeOp: "store"
       }
     ]
   });
 
   renderPass.setPipeline(pipeline);
-  renderPass.draw(9, 1, 0, 0);
+
+  // drawing
+  renderPass.draw.apply(renderPass, draw || [9, 1, 0, 0]);
   renderPass.endPass();
 
   // Step 6: Submit the work to the queue

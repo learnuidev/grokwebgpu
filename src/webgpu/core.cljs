@@ -4,8 +4,8 @@
    ; [webgpu.lessons.two-triangle :as two]
    ; ;; TODO:: lesson 03
    ; #_["@webgpu/glslang/dist/web-devel-onefile/glslang.js" :as glslang]
-   [webgpu.lessons.four-lines :as four]))
-   ; [webgpu.lessons.five-triangle :as five]
+   ; [webgpu.lessons.four-lines :as four]))
+   [webgpu.lessons.five-triangle :as five]))
    ; [webgpu.lessons.six-buffers :as six]
    ; [webgpu.lessons.seven-buffer-triangles :as seven]
    ; [webgpu.lessons.eight-buffer-one-triangle :as eight]
@@ -20,7 +20,7 @@
    ; [webgpu.book.one :as one]))
 
 (defn ^:dev/after-load start []
-  (four/app))
+  (five/app))
 
 (defn ^:export init []
   (start))

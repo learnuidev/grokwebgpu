@@ -130,3 +130,43 @@
 (defn app-old []
   (create-triangle {:canvas (js/document.getElementById "app")
                     :color "(1.0,1.0,1.0,1.0)"}))
+
+;; //
+;
+; var pos = array<vec2<f32>, 3>()
+;     vec2<f32>(0.0, 0.5),
+;     vec2<f32>(-0.5, -0.5),
+;     vec2<f32>(0.5, -0.5)
+; ;
+
+(def syntax {:name "main"
+             :input [{:type :builtin/vertex-index}]
+             :output {:type :struct/vertex-output}
+             :structs [{:id :struct/vertex-output
+                        :name "Output"
+                        :props [{:attribute :builtin
+                                 :value :position
+                                 :name :pos
+                                 :type :vec4-f32}
+                                {:attribute :location
+                                 :value 0
+                                 :name :color
+                                 :type :vec4-f32}]}]
+             :variables [{:name :color
+                          :type :avec3-f32
+                          :size 3
+                          :value [[1.0 1.0 1.0]
+                                  [0.0 1.0 1.0]
+                                  [0.0 0.0 1.0]]}
+                         {:name :pos
+                          :type :avec2-f32
+                          :size 3}]
+             :handler
+             '(defn main [^:vertex-index v color pos]
+                {:pos (nth pos v)
+                 :color (nth color v)})})
+
+; (def clj->wgsl-dict
+;   {'defn ""})
+(comment
+  (= 'defn (first (:handler syntax))))

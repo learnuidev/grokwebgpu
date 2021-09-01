@@ -51,7 +51,7 @@
                              vec2<f32>(-0.3,  0.2)
                          );
 
-                         // Exposion Effect ===
+                         // Explosion Effect ===
                          var input: Instance;
                          input.radius = 0.42;
                          input.pos = vec2<f32>(0.6, -0.2);
