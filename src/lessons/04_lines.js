@@ -1,5 +1,5 @@
 //
-const CheckWebGPU = () => {
+const checkWebGPU = () => {
   if (!navigator.gpu) {
     throw new Error(`Your current browser does not support WebGPU! Make sure you are on a system
                      with WebGPU enabled. Currently, SPIR-WebGPU is only supported in
@@ -11,9 +11,8 @@ const CheckWebGPU = () => {
   }
 };
 
-const Shaders = (vert = null, frag = null) => {
-  let vertex;
-  vertex =
+const createShaders = (vert = null, frag = null) => {
+  const vertex =
     vert ||
     `
         [[stage(vertex)]]
@@ -41,13 +40,15 @@ const Shaders = (vert = null, frag = null) => {
   return { vertex, fragment };
 };
 
-const CreatePrimitive = async ({
+const createPrimitive = async ({
   primitiveType = "point-list",
   canvas,
   vert,
-  frag
+  frag,
+  draw
 }) => {
-  CheckWebGPU();
+  checkWebGPU();
+
   let indexFormat = undefined;
   if (primitiveType === "line-strip") {
     indexFormat = "uint32";
@@ -58,13 +59,15 @@ const CreatePrimitive = async ({
   const device = await adapter.requestDevice();
   const context = canvas.getContext("webgpu");
 
-  const swapChainFormat = "bgra8unorm";
+  // Configure Swap Chain
+  // const swapChainFormat = "bgra8unorm";
+  const swapChainFormat = context.getPreferredFormat(adapter);
   context.configure({
     device: device,
     format: swapChainFormat
   });
 
-  const shader = Shaders(vert, frag);
+  const shader = createShaders(vert, frag);
   const pipeline = device.createRenderPipeline({
     vertex: {
       module: device.createShaderModule({
@@ -90,25 +93,24 @@ const CreatePrimitive = async ({
   });
 
   const commandEncoder = device.createCommandEncoder();
-  const textureView = context.getCurrentTexture().createView();
 
   const renderPass = commandEncoder.beginRenderPass({
     colorAttachments: [
       {
-        view: textureView,
-        loadValue: [0.5, 0.5, 0.8, 1], //background color
+        view: context.getCurrentTexture().createView(),
+        loadValue: [0.2, 0.5, 0.8, 1], //background color
         storeOp: "store"
       }
     ]
   });
   renderPass.setPipeline(pipeline);
-  renderPass.draw(6);
+  renderPass.draw(draw);
   renderPass.endPass();
 
   device.queue.submit([commandEncoder.finish()]);
 };
 
 export default {
-  CreatePrimitive,
-  Shaders
+  createPrimitive,
+  createShaders
 };
