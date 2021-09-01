@@ -16,6 +16,12 @@
                                        :frag frag})))
 ;
 ; ;; Primitives === testing time
+(def primitive-types
+  #{:point-list
+    :line-list
+    :line-strip
+    :triangle-list
+    :triangle-strip})
 (comment
   "Date: 3:00PM Monday, 16th August 2021"
  ;; Point (1) - :point-list

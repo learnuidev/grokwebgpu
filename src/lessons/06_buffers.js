@@ -279,7 +279,8 @@ export const createSquare = async ({
   vertData,
   color,
   background,
-  draw
+  draw,
+  primitiveType
 }) => {
   const gpu = await initGPU({ canvas });
 
@@ -312,6 +313,11 @@ export const createSquare = async ({
 
   const shader = createShaders(vert, frag);
   //
+
+  let indexFormat = undefined;
+  if (primitiveType === "triangle-strip" || primitiveType === "line-strip") {
+    indexFormat = "uint32";
+  }
   const pipeline = gpu.device.createRenderPipeline({
     vertex: {
       module: gpu.device.createShaderModule({
@@ -349,7 +355,8 @@ export const createSquare = async ({
       targets: [{ format: gpu.swapChainFormat }]
     },
     primitive: {
-      topology: "triangle-list"
+      topology: primitiveType,
+      stripIndexFormat: indexFormat
     }
   });
   const pipelineOld = createRenderPipeline(gpu.device, {

@@ -28,6 +28,12 @@
   ;     [0, 0, 1] // vertex c: blue)
     ;
 (comment "API")
+(def primitive-types
+  #{:point-list
+    :line-list
+    :line-strip
+    :triangle-list
+    :triangle-strip})
 
 (def vert-a [[-0.7, -0.5] ;; vertex a
              [0.5, -0.5]  ;; vertex b
@@ -41,6 +47,7 @@
   [{:keys [canvas]}]
   (createSquare (clj->js {:canvas canvas
                           :draw 6
+                          :primitiveType :triangle-list
                           :background [0.1 0.5 1 1]
                           :vertData [[-0.5 -0.5]    ;; vertex a
                                      [0.5 -0.5]     ;; vertex b
