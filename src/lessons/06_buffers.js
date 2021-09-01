@@ -242,29 +242,48 @@ export const checkWebGPU = () => {
 // ` ==================================================================================`;
 // ` ============================== Shaders (2) =======================================`;
 
-export const createShaders = (vert = null, frag = null) => {
+export const createShaders = (
+  vert = null,
+  frag = null,
+  custom_struct = null
+) => {
+  const struct =
+    custom_struct ||
+    `
+    struct VertexOutput {
+       [[builtin(position)]] pos: vec4<f32>;
+       [[location(0)]] color: vec4<f32>;
+    };`;
+
   const vertex =
     vert ||
     `
-        struct Output {
-            [[builtin(position)]] Position : vec4<f32>;
-            [[location(0)]] vColor : vec4<f32>;
-        };
+        {{struct}}
+
         [[stage(vertex)]]
-        fn main([[location(0)]] pos: vec4<f32>, [[location(1)]] color: vec4<f32>) -> Output {
-            var output: Output;
-            output.Position = pos;
-            output.vColor = color;
+        fn main([[location(0)]] pos: vec4<f32>, [[location(1)]] color: vec4<f32>) -> VertexOutput {
+            var output: VertexOutput;
+            output.pos = pos;
+            output.color = color;
             return output;
-        }`;
+        }`.replace("{{struct}}", struct);
 
   const fragment =
     frag ||
     `
+        {{struct}}
+
+        // [[stage(fragment)]]
+        // fn main([[location(0)]] vColor: vec4<f32>) -> [[location(0)]] vec4<f32> {
+        //     return vColor;
+        // }
+
         [[stage(fragment)]]
-        fn main([[location(0)]] vColor: vec4<f32>) -> [[location(0)]] vec4<f32> {
-            return vColor;
-        }`;
+        fn main(input: VertexOutput) -> [[location(0)]] vec4<f32> {
+            return input.color;
+        }
+
+        `.replace("{{struct}}", struct);
 
   return {
     vertex,

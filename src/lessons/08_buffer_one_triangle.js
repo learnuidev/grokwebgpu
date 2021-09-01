@@ -39,26 +39,43 @@ export function createRenderPipeline(
 ` ============================== Shaders (2) =======================================`;
 
 export const createShaders = () => {
+  const struct = {
+    name: "Output",
+    code: `
+      struct Output {
+          [[builtin(position)]] pos: vec4<f32>;
+          [[location(0)]] color: vec4<f32>;
+      };
+  `
+  };
   const vertex = `
-     struct Output {
-         [[builtin(position)]] Position : vec4<f32>;
-         [[location(0)]] vColor : vec4<f32>;
-     };
+     {{struct}}
 
      [[stage(vertex)]]
-     fn main([[location(0)]] pos: vec4<f32>, [[location(1)]] color: vec4<f32>) -> Output {
-         var output: Output;
-         output.Position = pos;
-         output.vColor = color;
+     fn main([[location(0)]] pos: vec4<f32>, [[location(1)]] color: vec4<f32>) -> {{structName}} {
+         var output: {{structName}};
+         output.pos = pos;
+         output.color = color;
          return output;
-     }`;
+     }`
+    .replace("{{struct}}", struct.code)
+    .replaceAll("{{structName}}", struct.name);
 
   const fragment = `
+     {{struct}}
+
      [[stage(fragment)]]
-     fn main([[location(0)]] vColor: vec4<f32>) -> [[location(0)]] vec4<f32> {
-         return vColor;
+     fn main(input: {{structName}}) -> [[location(0)]] vec4<f32> {
+         return input.color;
      }
-     `;
+
+     // [[stage(fragment)]]
+     // fn main([[location(0)]] color: vec4<f32>) -> [[location(0)]] vec4<f32> {
+     //     return color;
+     // }
+     `
+    .replace("{{struct}}", struct.code)
+    .replaceAll("{{structName}}", struct.name);
 
   return {
     vertex,
@@ -75,7 +92,8 @@ export const createSquare = async ({ canvas }) => {
   const adapter = await navigator.gpu.requestAdapter();
   const device = await adapter.requestDevice();
   const context = canvas.getContext("webgpu");
-  const swapChainFormat = "bgra8unorm";
+  // const swapChainFormat = "bgra8unorm";
+  const swapChainFormat = context.getPreferredFormat(adapter);
 
   // 2. Swap Chain
   context.configure({
@@ -89,30 +107,15 @@ export const createSquare = async ({ canvas }) => {
     usage: GPUBufferUsage.VERTEX,
     mappedAtCreation: true
   });
+
+  //  prettier-ignore
   const vertexData = new Float32Array([
-    // pos 1
-    0.0,
-    0.5,
-    // color 1 (red)
-    1,
-    0,
-    0,
-
-    // pos 2
-    -0.5,
-    -0.5,
-    // color 2 (orange)
-    1,
-    1,
-    0,
-
-    // pos 3
-    0.5,
-    -0.5,
-    // color 3 (blue)
-    0,
-    0,
-    1
+    // pos 1    // color 1 (red)
+    0.0, 0.5,   1, 0, 0,
+    // pos 2    // color 2 (orange)
+    -0.5, -0.5, 1, 1, 0,
+    // pos 3    // color 3 (blue)
+    0.5, -0.5,  0, 0, 1
   ]);
   new Float32Array(vertexBuffer.getMappedRange()).set(vertexData);
   vertexBuffer.unmap();
@@ -126,7 +129,7 @@ export const createSquare = async ({ canvas }) => {
       entryPoint: "main",
       buffers: [
         {
-          arrayStride: 4 * (2 + 3),
+          arrayStride: (2 + 3) * 4,
           attributes: [
             {
               shaderLocation: 0,
@@ -135,7 +138,7 @@ export const createSquare = async ({ canvas }) => {
             },
             {
               shaderLocation: 1,
-              offset: 4 * 2,
+              offset: 2 * 4,
               format: "float32x3"
             }
           ]
