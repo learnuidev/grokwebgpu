@@ -12,7 +12,7 @@
                                        :background background
                                        :primitiveType primitive-type
                                        :vert vert
-                                       :draw (if (vector? draw) draw [draw])
+                                       :draw draw
                                        :frag frag})))
 ;
 ; ;; Primitives === testing time
@@ -22,24 +22,32 @@
     :line-strip
     :triangle-list
     :triangle-strip})
+
 (comment
   "Date: 3:00PM Monday, 16th August 2021"
  ;; Point (1) - :point-list
   (create-primitive {:canvas (js/document.getElementById "app")
-                     :primitive-type :point-list})
+                     :primitive-type :point-list
+                     :draw 10})
  ;; Line
  ;; (2) - #{:line-list, :line-strip}
   (create-primitive {:canvas (js/document.getElementById "app")
-                     :primitive-type :line-list})
+                     :primitive-type :line-list
+                     :draw 12})
   (create-primitive {:canvas (js/document.getElementById "app")
-                     :primitive-type :line-strip})
+                     :primitive-type :line-strip
+                     :draw 12
+                     :background [0.6 0.6 1.0 1.0]})
 ;; Triangle
 ;; (2) - #{:triangle-list, :triangle-strip}
   "Date: 3:20PM Monday, 16th August 2021"
   (create-primitive {:canvas (js/document.getElementById "app")
-                     :primitive-type :triangle-list})
+                     :primitive-type :triangle-list
+                     :draw [12 1 0 0]})
   (create-primitive {:canvas (js/document.getElementById "app")
-                     :primitive-type :triangle-strip}))
+                     :primitive-type :triangle-strip
+                     :draw [12 1 0 0]}))
+
 ;;
 (comment
   (shaders "(0,0,0,1"))

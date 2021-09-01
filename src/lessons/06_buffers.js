@@ -283,7 +283,6 @@ export const createSquare = async ({
   primitiveType
 }) => {
   const gpu = await initGPU({ canvas });
-
   // const aspectRatio = canvas.width / canvas.height;
 
   const vertexData =

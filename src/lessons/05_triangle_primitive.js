@@ -89,7 +89,7 @@ export const ShadersOld = () => {
   return { vertex, fragment };
 };
 
-export const Shaders = (vert = null, frag = null) => {
+export const ShadersOld3 = (vert = null, frag = null) => {
   const vertex =
     vert ||
     `
@@ -138,6 +138,65 @@ export const Shaders = (vert = null, frag = null) => {
     `;
   return { vertex, fragment };
 };
+export const Shaders = (vert = null, frag = null) => {
+  const vertex =
+    vert ||
+    `
+    struct VertexOutput {
+        [[builtin(position)]] Position : vec4<f32>;
+        [[location(0)]] vColor : vec4<f32>;
+    };
+
+    [[stage(vertex)]]
+    fn main([[builtin(vertex_index)]] vIndex: u32) -> VertexOutput {
+        var pos: array<vec2<f32>, 12> = array<vec2<f32>, 12>(
+            vec2<f32>(-0.62,  0.80),
+            vec2<f32>(-0.87,  -0.6),
+            vec2<f32>(-0.20,  0.60),
+            vec2<f32>(-0.37, -0.07),
+            vec2<f32>( 0.05,  0.18),
+            vec2<f32>(-0.13, -0.40),
+            vec2<f32>( 0.30, -0.13),
+            vec2<f32>( 0.13, -0.64),
+            vec2<f32>( 0.70, -0.30),
+            vec2<f32>(0.0, -0.30),
+            vec2<f32>(0.0, -0.60),
+            vec2<f32>(0.0, -0.90),
+        );
+
+        // specifying types for array is optional
+        var color = array<vec3<f32>, 12>(
+            vec3<f32>(1.0, 1.0, 1.0),
+            vec3<f32>(1.0, 1.0, 1.0),
+            vec3<f32>(1.0, 0.4, 0.3),
+            vec3<f32>(1.0, 0.1, 0.0),
+            vec3<f32>(1.0, 0.9, 0.4),
+            vec3<f32>(0.4, 0.5, 0.7),
+            vec3<f32>(1.0, 0.2, 0.8),
+            vec3<f32>(1.0, 1.3, 0.0),
+            vec3<f32>(1.0, 0.0, 1.0),
+            vec3<f32>(1.0, 0.0, 1.0),
+            vec3<f32>(1.0, 0.0, 1.0),
+            vec3<f32>(1.0, 0.0, 1.0)
+        );
+        var output: VertexOutput;
+        output.Position = vec4<f32>(pos[vIndex], 0.0, 1.0);
+        output.vColor = vec4<f32>(color[vIndex], 1.0);
+        // output.vColor = vec4<f32>(pos[vIndex], 1.0, 1.0);
+        return output;
+    }
+    `;
+
+  const fragment =
+    frag ||
+    `
+        [[stage(fragment)]]
+        fn main([[location(0)]] vColor: vec4<f32>) -> [[location(0)]] vec4<f32> {
+            return vColor;
+        }
+    `;
+  return { vertex, fragment };
+};
 
 export const CreatePrimitive = async ({
   primitiveType = "triangle-list",
@@ -145,7 +204,7 @@ export const CreatePrimitive = async ({
   vert,
   frag,
   background,
-  draw
+  draw = null
 }) => {
   let indexFormat = undefined;
   `"Date: 6:12PM Monday, 16th August 2021 - added primitiveType === 'line-strip'`;
@@ -236,7 +295,10 @@ export const CreatePrimitive = async ({
   renderPass.setPipeline(pipeline);
 
   // drawing
-  renderPass.draw.apply(renderPass, draw || [9, 1, 0, 0]);
+
+  const drawArgs = draw ? (Array.isArray(draw) ? draw : [draw]) : [9, 1, 0, 0];
+  console.log(drawArgs);
+  renderPass.draw.apply(renderPass, drawArgs);
   renderPass.endPass();
 
   // Step 6: Submit the work to the queue
