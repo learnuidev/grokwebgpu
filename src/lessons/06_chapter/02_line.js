@@ -45,7 +45,7 @@ const createViewProjection = ({ isPerspective, aspectRatio }, props) => {
   // Returns a view matrix
   const createViewMatrix = (eye, centerPos, up, props) => {
     const {
-      libs: { mat4 }
+      math: { mat4 }
     } = props;
 
     const eyePosition = eye || [2, 2, 4];
@@ -73,7 +73,7 @@ const createViewProjection = ({ isPerspective, aspectRatio }, props) => {
   };
 
   const {
-    libs: { mat4 }
+    math: { mat4 }
   } = props;
 
   // View Matrix
@@ -126,12 +126,29 @@ function createLine3DData() {
 }
 
 export async function createLine(props) {
+  const {
+    math: { mat4 },
+    canvas
+  } = props;
   // console.log("PROPS", props);
   const { device, context, swapChainFormat } = await gpuInit({
-    canvas: props.canvas
+    canvas
   });
 
+  // Create Vertices
   const lineData = createLine3DData();
+  const vertexBuffer = createGPUBuffer(device, lineData);
 
-  console.log("LINE", lineData);
+  //create uniform data
+  const modelMatrix = mat4.create();
+  const mvpMatrix = mat4.create();
+  let vMatrix = mat4.create();
+  const viewProjection = createViewProjection(
+    { aspectRatio: canvas.width / canvas.height, isPerspective: true },
+    props
+  );
+
+  let vpMatrix = viewProjection.viewProjectionMatrix;
+
+  console.log("LINE", vpMatrix);
 }
