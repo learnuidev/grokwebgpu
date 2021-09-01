@@ -113,7 +113,7 @@ const createViewProjection = ({ isPerspective, aspectRatio }, props) => {
   };
 };
 
-export function createLine3DData() {
+function createLine3DData() {
   let data = [];
   for (let i = 0; i < 300; i++) {
     let t = (0.1 * i) / 30;
@@ -122,7 +122,7 @@ export function createLine3DData() {
     let y = 2 * t - 1;
     data.push(x, y, z);
   }
-  return new Float32Array(data.flat(1));
+  return data.flat(1);
 }
 
 export async function createLine(props) {
@@ -133,5 +133,5 @@ export async function createLine(props) {
 
   const lineData = createLine3DData();
 
-  console.log("LINE", line);
+  console.log("LINE", lineData);
 }
