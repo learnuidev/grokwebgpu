@@ -1,3 +1,5 @@
+// Lesson Structs
+
 const CheckWebGPU = () => {
   if (!navigator.gpu) {
     throw new Error(`Your current browser does not support WebGPU! Make sure you are on a system
@@ -14,13 +16,13 @@ export const Shaders = (vert = null, frag = null) => {
   const vertex =
     vert ||
     `
-        struct Output {
-            [[builtin(position)]] Position : vec4<f32>;
-            [[location(0)]] vColor : vec4<f32>;
+        struct VertexOutput {
+            [[builtin(position)]] pos : vec4<f32>;
+            [[location(0)]] color : vec4<f32>;
         };
 
         [[stage(vertex)]]
-        fn main([[builtin(vertex_index)]] VertexIndex: u32) -> Output {
+        fn main([[builtin(vertex_index)]] vIndex: u32) -> VertexOutput {
             var pos = array<vec2<f32>, 3>(
                 vec2<f32>(0.0, 0.5),
                 vec2<f32>(-0.5, -0.5),
@@ -32,9 +34,9 @@ export const Shaders = (vert = null, frag = null) => {
                 vec3<f32>(0.0, 1.0, 0.0),
                 vec3<f32>(0.0, 0.0, 1.0)
             );
-            var output: Output;
-            output.Position = vec4<f32>(pos[VertexIndex], 0.0, 1.0);
-            output.vColor = vec4<f32>(color[VertexIndex], 1.0);
+            var output: VertexOutput;
+            output.pos = vec4<f32>(pos[vIndex], 0.0, 1.0);
+            output.color = vec4<f32>(color[vIndex], 1.0);
             return output;
         }
     `;
@@ -42,15 +44,61 @@ export const Shaders = (vert = null, frag = null) => {
   const fragment =
     frag ||
     `
-        [[stage(fragment)]]
-        fn main([[location(0)]] vColor: vec4<f32>) -> [[location(0)]] vec4<f32> {
-            return vColor;
+    [[stage(fragment)]]
+    fn main([[location(0)]] color: vec4<f32>) -> [[location(0)]] vec4<f32> {
+        return color;
+    }
+    `;
+
+  return { vertex, fragment };
+};
+export const ShadersWrong = (vert = null, frag = null) => {
+  const vertex =
+    vert ||
+    `
+        struct VertexOutput {
+            [[builtin(position)]] pos: vec4<f32>;
+            [[location(0)]] vIndex: u32;
+        };
+
+        [[stage(vertex)]]
+        fn main([[builtin(vertex_index)]] vIndex: u32) -> VertexOutput {
+            var pos = array<vec2<f32>, 3>(
+                vec2<f32>(0.0, 0.5),
+                vec2<f32>(-0.5, -0.5),
+                vec2<f32>(0.5, -0.5)
+            );
+
+            var output: VertexOutput;
+            output.pos = vec4<f32>(pos[vIndex], 0.0, 1.0);
+            output.vIndex = vIndex;
+            return output;
         }
+    `;
+
+  const fragment =
+    frag ||
+    `
+    struct VertexOutput {
+        [[builtin(position)]] pos : vec4<f32>;
+        [[location(0)]] vIndex: u32;
+    };
+
+    [[stage(fragment)]]
+    fn main(vOutput: VertexOutput) -> [[location(0)]] vec4<f32> {
+        var color = array<vec3<f32>, 3>(
+            vec3<f32>(1.0, 1.0, 0.0),
+            vec3<f32>(0.2, 1.0, 0.0),
+            vec3<f32>(0.0, 0.0, 1.0)
+        );
+
+        return vec4<f32>(color[vOutput.vIndex], 1.0);
+    }
     `;
   return { vertex, fragment };
 };
 
-export const CreateTriangle = async ({ canvas, vert, frag }) => {
+export const CreateTriangle = async ({ canvas, vert, frag, graphics }) => {
   CheckWebGPU();
 
   `Step 1: GPU Adapter`;
@@ -69,7 +117,10 @@ export const CreateTriangle = async ({ canvas, vert, frag }) => {
     format: swapChainFormat
   });
 
+  console.log("GRAPHICS", graphics);
+
   `Step 5: Render Pipeline`;
+
   const shader = Shaders(vert, frag);
   const pipeline = device.createRenderPipeline({
     vertex: {

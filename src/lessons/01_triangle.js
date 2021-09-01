@@ -143,8 +143,15 @@ const Shaders = color => {
   format so that copying to it is easy.
 `;
 
+// ==================================== SHADERS END ============================
 `Comment: How to create a triangle`;
-const CreateTriangle = async ({ color = "(1.0,1.0,1.0,1.0)", canvas }) => {
+const createTriangle = async ({
+  color = "(1.0,1.0,1.0,1.0)",
+  canvas,
+  background
+}) => {
+  console.log("gets logged");
+
   ` === Step 1 : Access GPU Adapter ===
     Access the GPU (adapter + device) (https://developers.google.com/web/updates/2019/08/get-started-with-gpu-compute-on-the-web)
      - Accessing the GPU is easy in WebGPU. Calling navigator.gpu.requestAdapter()
@@ -176,14 +183,17 @@ const CreateTriangle = async ({ color = "(1.0,1.0,1.0,1.0)", canvas }) => {
   `=============================================================================`;
   `=============================================================================`;
 
-  ` === Step 4: Configure the Swap Chain ===
+  ` === Step 4: Configure the Swap Chain Infra ===
 
-  - WebGPU like Vulkan does not have the concept of a "default framebuffer", hence it
-    requires an infrastructure that will own the buffers we will render to before
-    we visualize them on the screen. This infrastructure is known as the swap chain
-    and must be created explicitly in WebGPU. The swap chain is essentially a queue
-    of images that are waiting to be presented to the screen. Our application
-    will acquire such an image to draw to it, and then return it to the queue.
+  - WebGPU like Vulkan does not have the concept of a "default framebuffer",
+    hence it requires an infrastructure that will own the buffers we
+    will render to before we visualize them on the screen.
+  - This infrastructure is known as the Swap Chain and must be created
+    explicitly in WebGPU.
+  - The Swap Chain is essentially a queue of images that are waiting to
+    be presented to the screen.
+  - Our application will acquire such an image to draw to it, and then return it
+    to the queue.
     How exactly the queue works and the conditions for presenting an image from
     the queue depend on how the swap chain is set up, but the general purpose of
     the swap chain is to synchronize the presentation of images with the refresh
@@ -229,13 +239,19 @@ const CreateTriangle = async ({ color = "(1.0,1.0,1.0,1.0)", canvas }) => {
     const textureView = context.getCurrentTexture().createView();
   `;
 
-  const swapChainFormat = "bgra8unorm";
+  // const swapChainFormat = "bgra8unorm";
+  const swapChainFormat = context.getPreferredFormat(adapter);
   `Used in two places: context.configure and device.createRenderPipeline (pipeline)`;
 
   context.configure({
     device: device,
     format: swapChainFormat
   });
+  // OR
+  // context.configureSwapChain({
+  //   device: device,
+  //   format: swapChainFormat
+  // });
   `By passing the device to the configure() function, we create a linkage between the GPU and the canvas.`;
 
   `=============================================================================`;
@@ -258,12 +274,33 @@ const CreateTriangle = async ({ color = "(1.0,1.0,1.0,1.0)", canvas }) => {
 
   let col;
 
-  if (typeof color === "object") {
+  function formatColor(color) {
     const { r, g, b, a } = color;
-    col = "( " + r + ", " + g + ", " + b + ", " + a + ")";
+    let rres = r,
+      gres = g,
+      bres = b,
+      ares = a;
+
+    if (r === parseInt(r)) {
+      rres = `${r}.0`;
+    }
+    if (g === parseInt(g)) {
+      gres = `${gres}.0`;
+    }
+    if (b === parseInt(b)) {
+      bres = `${bres}.0`;
+    }
+    if (a === parseInt(a)) {
+      ares = `${ares}.0`;
+    }
+    return "( " + rres + ", " + gres + ", " + bres + ", " + ares + ")";
   }
 
-  col = color || "(r: 0.0, g: 0.0, b: 0.0, a: 1.0)";
+  if (typeof color === "object") {
+    col = formatColor(color);
+  } else {
+    col = color;
+  }
 
   const shader = Shaders(col);
 
@@ -338,6 +375,19 @@ const CreateTriangle = async ({ color = "(1.0,1.0,1.0,1.0)", canvas }) => {
    - Both the vertex and fragment attributes accepts a object with two properties:
       - module: which we defined in the previous step
       - entryPoint: string of "main" which refers to the main function in vertex shader
+   - Here you can specify which function inside of the shader should be called,
+     which is known as the entryPoint. These are the functions we marked
+     with [[stage(vertex)]] and [[stage(fragment)]]
+
+   - The buffers field inside vertex tells webGPU what type of vertices we
+     want to pass to the vertex shader. We're specifying the vertices
+     in the vertex shader itself so we'll leave this empty. We'll put
+     something there in the next tutorial.
+
+   - We need fragments becuase we want to store color data to the swapchain.
+   - The targets field tells webGPU what color outputs it should set up.
+     Currently we only need one for the swapchain. We use the swapchain's
+     format so that copying to it is easy.
 
    - The fragment attribute include an additional targets attribute, which specifies the set of output
      slots and texture format. Here, our fragment shader has a single output slot for the color,
@@ -426,12 +476,15 @@ const CreateTriangle = async ({ color = "(1.0,1.0,1.0,1.0)", canvas }) => {
       colorAttachments: [
         {
           view: context.getCurrentTexture().createView(),
-          loadValue: { r: 0.5, g: 0.5, b: 0.8, a: 1.0 }, //background color
+          // loadValue: , { r: 0.5, g: 0.5, b: 0.8, a: 1.0 } //background color
+          loadValue: background || { r: 0.5, g: 0.5, b: 0.8, a: 1.0 },
           storeOp: "store"
         }
       ]
     }
   );
+
+  console.log("background", background);
 
   `=== 6.3 renderPass - setPipline, draw, endPass ===`;
   `We assign the pipeline to the render pass`;
@@ -452,5 +505,5 @@ const CreateTriangle = async ({ color = "(1.0,1.0,1.0,1.0)", canvas }) => {
 
 export default {
   Shaders,
-  CreateTriangle
+  createTriangle
 };

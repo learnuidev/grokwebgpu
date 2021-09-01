@@ -5,11 +5,12 @@
 (defn shaders [color]
   (.Shaders triangle color))
 
-(defn create-triangle [{:keys [canvas color vert frag]}]
+(defn create-triangle [{:keys [canvas color vert frag graphics]}]
   (.CreateTriangle triangle (clj->js {:canvas canvas
                                       :color color
                                       :vert vert
-                                      :frag frag})))
+                                      :frag frag
+                                      :graphics graphics})))
 
 ;; testing time
 (comment
@@ -92,6 +93,8 @@
 (defn app []
   (create-triangle {:canvas (js/document.getElementById "app")
                     :color "(1.0,1.0,1.0,1.0)"
+                    :vertex {:entry :vert_main}
+                    ; :frag {:entry :frag_main}
                     :vert
                     "struct Output {
                          [[builtin(position)]] pos: vec4<f32>;
@@ -109,7 +112,7 @@
 
                          var color = array<vec3<f32>, 3>(
                              vec3<f32>(1.0, 0.0, 0.0),
-                             vec3<f32>(0.0, 1.0, 0.0),
+                             vec3<f32>(0.0, 1.0, 1.0),
                              vec3<f32>(0.0, 0.0, 1.0)
                          );
                          var output: Output;
@@ -123,3 +126,7 @@
                         return color;
                         // return vec4<f32>(0.0, 1.0, 1.0, 1.0);
                      }"}))
+
+(defn app-old []
+  (create-triangle {:canvas (js/document.getElementById "app")
+                    :color "(1.0,1.0,1.0,1.0)"}))

@@ -1,7 +1,7 @@
 (ns webgpu.core
   (:require
    ; [webgpu.lessons.one-triangle :as one]
-   ; [webgpu.lessons.two-triangle :as two]
+   [webgpu.lessons.two-triangle :as two]
    ; ;; TODO:: lesson 03
    ; #_["@webgpu/glslang/dist/web-devel-onefile/glslang.js" :as glslang]
    ; [webgpu.lessons.four-lines :as four]
@@ -14,13 +14,13 @@
   ;;  [webgpu.lessons.ch06.cube-vertex-colors :as eleven]
   ;;  [webgpu.lessons.genka.basic-scene-renderer :as bsr]
    ;; Computing Examples
-   ; [webgpu.compute.one :as compute]
-   ; [webgpu.lessons.twelve-texture :as texture]
+   ; [webgpu.compute.one :as compute]))
+   [webgpu.lessons.twelve-texture :as texture]))
    ;; Book
-   [webgpu.book.one :as one]))
+   ; [webgpu.book.one :as one]))
 
 (defn ^:dev/after-load start []
-  (one/app))
+  (two/app))
 
 (defn ^:export init []
   (start))
