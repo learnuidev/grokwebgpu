@@ -316,16 +316,14 @@ export async function createLine(props) {
     ]
   });
 
-  const updateCamera = () => {
-    console.log("LOGGED");
+  const updateCamera = ({ translation, rotation, scale }) => {
+    // console.log("LOGGED");
+
     updateTransformationMatrix(
       modelMatrix,
-      // translation
-      [0, 0, 0],
-      // rotation
-      [0, 0, 0],
-      // scaling
-      [1, 1, 1],
+      controls.translation,
+      controls.rotation,
+      controls.scaling,
       props
     );
 
@@ -338,9 +336,16 @@ export async function createLine(props) {
   };
 
   `Step 5: Draw`;
+  const controls = {
+    translation: [0, 0, 0],
+    rotation: [0, 0, 0],
+    scaling: [1, 1, 1]
+  };
+  window.controls = controls;
+
   const draw = () => {
     // update camera
-    updateCamera();
+    updateCamera(controls);
 
     // command encoder
     const commandEncoder = device.createCommandEncoder();
@@ -365,5 +370,28 @@ export async function createLine(props) {
     device.queue.submit([commandEncoder.finish()]);
   };
 
-  draw();
+  const app = {
+    loopID: null,
+    stopped: false
+  };
+
+  function run(f) {
+    const frame = t => {
+      f();
+
+      // for (const k in app.keyStates) {
+      //   app.keyStates[k] = processBtnState(app.keyStates[k]);
+      // }
+
+      // app.mouseState = processBtnState(app.mouseState);
+      // app.charInputted = [];
+      // app.mouseMoved = false;
+      app.loopID = requestAnimationFrame(frame);
+    };
+
+    app.stopped = false;
+    app.loopID = requestAnimationFrame(frame);
+  }
+
+  run(() => draw());
 }
