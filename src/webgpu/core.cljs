@@ -11,7 +11,7 @@
    ; [webgpu.lessons.eight-buffer-one-triangle :as eight]))
    ; [webgpu.lessons.nine-transformation :as nine]))
    ; [webgpu.lessons.ten-projection :as ten]
-   ; [webgpu.lessons.ch06.cube-vertex-colors :as eleven]))
+   ; [webgpu.lessons.ch06.cube-vertex-colors :as eleven]
    [webgpu.lessons.ch06.line :as twelve]))
    ; [webgpu.lessons.genka.basic-scene-renderer :as bsr]))
    ;; Computing Examples
