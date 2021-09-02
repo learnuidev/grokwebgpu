@@ -214,7 +214,6 @@ function createLine3DData() {
   }
   return data.flat(1);
 }
-
 window.createLine3DData = createLine3DData;
 
 export async function createLine(props) {
@@ -228,7 +227,6 @@ export async function createLine(props) {
   });
 
   window.swapChainFormat = swapChainFormat;
-
   window.props = props;
 
   // Create Vertices
@@ -237,17 +235,16 @@ export async function createLine(props) {
 
   //create uniform data
   const modelMatrix = mat4.create();
+  let vpMatrix;
   const mvpMatrix = mat4.create();
-  let vMatrix = mat4.create();
-  let vpMatrix = mat4.create();
+
   const viewProjection = createViewProjection(
     { aspectRatio: canvas.width / canvas.height, isPerspective: true },
     props
   );
-
   vpMatrix = viewProjection.viewProjectionMatrix;
-  const camera = props.camera(canvas, viewProjection.cameraOption);
 
+  const camera = props.camera(canvas, viewProjection.cameraOption);
   window.camera = camera;
 
   `Step 3: CREATE Render Pipeline`;
@@ -256,7 +253,7 @@ export async function createLine(props) {
           [[block]] struct Uniforms {
               mvpMatrix: mat4x4<f32>;
           };
-          [[binding(0), group(0)]] var<uniform> uniforms : Uniforms;
+          [[binding(0), group(0)]] var<uniform> uniforms: Uniforms;
 
           [[stage(vertex)]]
           fn main([[location(0)]] pos: vec4<f32>) ->  [[builtin(position)]] vec4<f32> {
@@ -266,7 +263,7 @@ export async function createLine(props) {
     fragment: `
           [[stage(fragment)]]
           fn main() -> [[location(0)]] vec4<f32> {
-              return vec4<f32>(1.0, 1.0, 0.0, 1.0);
+              return vec4<f32>(1.0, 0.2, 0.2, 1.0);
           }`
   };
 
@@ -316,6 +313,7 @@ export async function createLine(props) {
     ]
   });
 
+  // Update Camera
   const updateCamera = ({ translation, rotation, scale }) => {
     updateTransformationMatrix(
       modelMatrix,
@@ -330,13 +328,13 @@ export async function createLine(props) {
   };
 
   `Step 5: Draw`;
+
   const controls = {
     translation: [0, 0, 0],
     rotation: [0, 0, 0],
     scaling: [1, 1, 1]
   };
   window.controls = controls;
-
   const draw = () => {
     // update camera
     updateCamera(controls);
@@ -347,7 +345,7 @@ export async function createLine(props) {
       colorAttachments: [
         {
           view: context.getCurrentTexture().createView(),
-          loadValue: [0.5, 0.5, 0.8, 1],
+          loadValue: [0.2, 0.2, 0.8, 1],
           storeOp: "store"
         }
       ]
@@ -370,14 +368,6 @@ export async function createLine(props) {
   function run(f) {
     const frame = t => {
       f();
-
-      // for (const k in app.keyStates) {
-      //   app.keyStates[k] = processBtnState(app.keyStates[k]);
-      // }
-
-      // app.mouseState = processBtnState(app.mouseState);
-      // app.charInputted = [];
-      // app.mouseMoved = false;
       app.loopID = requestAnimationFrame(frame);
     };
 
