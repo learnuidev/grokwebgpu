@@ -69,67 +69,22 @@ const updateTransformationMatrix = (
   const {
     math: { mat4 }
   } = props;
-  window.mat4 = mat4;
 
-  rotation = rotation || [2, 0, 0];
+  rotation = rotation || [3, 0, 0];
   translation = translation || [0, 0, 0];
   scaling = scaling || [2, 2, 1];
 
-  //perform indivisual transformations
-
-  const translateMat = matrix4.translate(translation);
-  window.translateMat = translateMat;
-  `[1   0   0  0
-    0   1   0  0
-    0   0   1  0
-    0, -5 -10  1]
-    ]
-  `;
-
+  // inputs
+  const scaleMat = matrix4.fromScaling(scaling);
   const rotateXMat = matrix4.fromXRotation(rotation[0]);
   const rotateYMat = matrix4.fromYRotation(rotation[1]);
   const rotateZMat = matrix4.fromZRotation(rotation[2]);
-  const scaleMat = matrix4.fromScaling(scaling);
-
-  //combine all transformation matrices together to form a final transform matrix: modelMat
-  window.modelA = modelMat.slice();
-  // == console.log(window.modelA);
-  `[1, 0, 0, 0,
-    0, 1, 0, 0,
-    0, 0, 1, 0,
-    0, 0, 0, 1,]
-  `;
+  const translateMat = matrix4.translate(translation);
 
   mat4.multiply(modelMat, rotateXMat, scaleMat);
-  window.modelX = modelMat.slice();
-  // == console.log(window.modelX);
-  `[ 2, 0, 0, 0,
-     0, 2, 0, 0,
-     0, 0, 1, 0,
-     0, 0, 0, 1]
-  `;
   mat4.multiply(modelMat, rotateYMat, modelMat);
-  window.modelY = modelMat.slice();
-
-  `[ 2.1612091064453125, 0, 3.3658838272094727, 0,
-     0,                  2, 0,                  0,
-    -2.5244128704071045, 0, 1.6209068298339844, 0,
-     0,                  0, 0,                  1,`;
-
   mat4.multiply(modelMat, rotateZMat, modelMat);
-  window.modelZ = modelMat.slice();
-  `[ 2.1612091064453125, 0, 3.3658838272094727, 0,
-     0,                  2, 0,                  0,
-    -2.5244128704071045, 0, 1.6209068298339844, 0,
-     0,                  0, 0,                  1,]
-  `;
-
   mat4.multiply(modelMat, translateMat, modelMat);
-  window.result = modelMat.slice();
-  `[ 2.1612091064453125,  0,   3.3658838272094727, 0,
-     0,                   2,   0,                  0,
-    -2.5244128704071045,  0,   1.6209068298339844, 0,
-     0,                  -5, -10,                  1,]`;
 };
 
 const gpuInit = async ({ canvas }) => {
@@ -272,52 +227,40 @@ export async function createLine(props) {
     canvas
   });
 
-  // window.swapChainFormat = swapChainFormat;
+  window.swapChainFormat = swapChainFormat;
 
-  // window.props = props;
+  window.props = props;
 
   // Create Vertices
   const lineData = createLine3DData();
-  const data = new Float32Array(lineData);
-  window.data = data;
-  const vertexBuffer = device.createBuffer({
-    size: data.byteLength,
-    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-    mappedAtCreation: true
-  });
-
-  // 3: Get Access to the Content
-  new Float32Array(vertexBuffer.getMappedRange()).set(data);
-  // 4. Unmap so that data can be used by the GPU
-  vertexBuffer.unmap();
+  const vertexBuffer = createGPUBuffer(device, lineData);
 
   //create uniform data
-  // const modelMatrix = mat4.create();
-  // const mvpMatrix = mat4.create();
-  // let vMatrix = mat4.create();
-  // let vpMatrix = mat4.create();
-  // const viewProjection = createViewProjection(
-  //   { aspectRatio: canvas.width / canvas.height, isPerspective: true },
-  //   props
-  // );
+  const modelMatrix = mat4.create();
+  const mvpMatrix = mat4.create();
+  let vMatrix = mat4.create();
+  let vpMatrix = mat4.create();
+  const viewProjection = createViewProjection(
+    { aspectRatio: canvas.width / canvas.height, isPerspective: true },
+    props
+  );
 
-  // vpMatrix = viewProjection.viewProjectionMatrix;
-  // const camera = props.camera(canvas, viewProjection.cameraOption);
+  vpMatrix = viewProjection.viewProjectionMatrix;
+  const camera = props.camera(canvas, viewProjection.cameraOption);
 
-  // window.camera = camera;
+  window.camera = camera;
 
   `Step 3: CREATE Render Pipeline`;
   const shaders = {
     vertex: `
-          // [[block]] struct Uniforms {
-          //     [[offset(0)]] mvpMatrix : mat4x4<f32>;
-          // };
-          // [[binding(0), group(0)]] var<uniform> uniforms : Uniforms;
+          [[block]] struct Uniforms {
+              mvpMatrix: mat4x4<f32>;
+          };
+          [[binding(0), group(0)]] var<uniform> uniforms : Uniforms;
 
           [[stage(vertex)]]
           fn main([[location(0)]] pos: vec4<f32>) ->  [[builtin(position)]] vec4<f32> {
-              // return uniforms.mvpMatrix * pos;
-              return pos;
+              return uniforms.mvpMatrix * pos;
           }`,
 
     fragment: `
@@ -335,14 +278,8 @@ export async function createLine(props) {
       entryPoint: "main",
       buffers: [
         {
-          arrayStride: 12,
-          attributes: [
-            {
-              shaderLocation: 0,
-              format: "float32x3",
-              offset: 0
-            }
-          ]
+          arrayStride: 4 * 3,
+          attributes: [{ shaderLocation: 0, format: "float32x3", offset: 0 }]
         }
       ]
     },
@@ -360,94 +297,50 @@ export async function createLine(props) {
   });
 
   //create uniform buffer and bind group
-  // const sceneUniformBuffer = device.createBuffer({
-  //   size: 64,
-  //   usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-  // });
+  const sceneUniformBuffer = device.createBuffer({
+    size: 64,
+    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+  });
 
-  // const sceneUniformBindGroup = device.createBindGroup({
-  //   layout: pipeline.getBindGroupLayout(0),
-  //   entries: [
-  //     {
-  //       binding: 0,
-  //       resource: {
-  //         buffer: sceneUniformBuffer,
-  //         offset: 0,
-  //         size: 64
-  //       }
-  //     }
-  //   ]
-  // });
+  const sceneUniformBindGroup = device.createBindGroup({
+    layout: pipeline.getBindGroupLayout(0),
+    entries: [
+      {
+        binding: 0,
+        resource: {
+          buffer: sceneUniformBuffer,
+          offset: 0,
+          size: 64
+        }
+      }
+    ]
+  });
 
-  const app = {
-    loopID: null,
-    stopped: false
-  };
-
-  function run(f) {
-    const frame = t => {
-      f();
-
-      // for (const k in app.keyStates) {
-      //   app.keyStates[k] = processBtnState(app.keyStates[k]);
-      // }
-
-      // app.mouseState = processBtnState(app.mouseState);
-      // app.charInputted = [];
-      // app.mouseMoved = false;
-      app.loopID = requestAnimationFrame(frame);
-    };
-
-    app.stopped = false;
-    app.loopID = requestAnimationFrame(frame);
-  }
-
-  const createTransforms = (modelMat, translation, rotation, scaling) => {
-    const rotateXMat = mat4.create();
-    const rotateYMat = mat4.create();
-    const rotateZMat = mat4.create();
-    const translateMat = mat4.create();
-    const scaleMat = mat4.create();
-
-    rotation = rotation || [0, 0, 0];
-    translation = translation || [0, 0, 0];
-    scaling = scaling || [1, 1, 1];
-
-    //perform indivisual transformations
-    mat4.fromTranslation(translateMat, translation);
-    mat4.fromXRotation(rotateXMat, rotation[0]);
-    mat4.fromYRotation(rotateYMat, rotation[1]);
-    mat4.fromZRotation(rotateZMat, rotation[2]);
-    mat4.fromScaling(scaleMat, scaling);
-
-    //combine all transformation matrices together to form a final transform matrix: modelMat
-    mat4.multiply(modelMat, rotateXMat, scaleMat);
-    mat4.multiply(modelMat, rotateYMat, modelMat);
-    mat4.multiply(modelMat, rotateZMat, modelMat);
-    mat4.multiply(modelMat, translateMat, modelMat);
-  };
-
-  // const updateCamera = () => {};
   const updateCamera = () => {
     console.log("LOGGED");
-    createTransforms(
+    updateTransformationMatrix(
       modelMatrix,
       // translation
       [0, 0, 0],
       // rotation
       [0, 0, 0],
       // scaling
-      [1, 1, 1]
+      [1, 1, 1],
+      props
     );
 
-    mat4.multiply(mvpMatrix, vpMatrix, modelMatrix);
-    device.queue.writeBuffer(sceneUniformBuffer, 0, mvpMatrix);
+    mat4.multiply(mvpMatrix, viewProjection.viewProjectionMatrix, modelMatrix);
+    device.queue.writeBuffer(
+      sceneUniformBuffer, // destination: Uniform Buffer
+      0, // offset
+      mvpMatrix // source
+    );
   };
 
   `Step 5: Draw`;
   const draw = () => {
     // update camera
-    // updateCamera();
+    updateCamera();
 
     // command encoder
     const commandEncoder = device.createCommandEncoder();
@@ -457,14 +350,14 @@ export async function createLine(props) {
       colorAttachments: [
         {
           view: context.getCurrentTexture().createView(),
-          loadValue: [0.5, 0.5, 1.0, 1.0],
+          loadValue: [0.5, 0.5, 0.8, 1],
           storeOp: "store"
         }
       ]
     });
     renderPass.setPipeline(pipeline);
     renderPass.setVertexBuffer(0, vertexBuffer);
-    // renderPass.setBindGroup(0, sceneUniformBindGroup);
+    renderPass.setBindGroup(0, sceneUniformBindGroup);
     renderPass.draw(300, 1, 0, 0);
     renderPass.endPass();
 
@@ -473,6 +366,4 @@ export async function createLine(props) {
   };
 
   draw();
-
-  // console.log(sceneUniformBindGroup);
 }
