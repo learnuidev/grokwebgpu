@@ -317,22 +317,16 @@ export async function createLine(props) {
   });
 
   const updateCamera = ({ translation, rotation, scale }) => {
-    // console.log("LOGGED");
-
     updateTransformationMatrix(
       modelMatrix,
-      controls.translation,
-      controls.rotation,
-      controls.scaling,
+      translation,
+      rotation,
+      scale,
       props
     );
 
     mat4.multiply(mvpMatrix, viewProjection.viewProjectionMatrix, modelMatrix);
-    device.queue.writeBuffer(
-      sceneUniformBuffer, // destination: Uniform Buffer
-      0, // offset
-      mvpMatrix // source
-    );
+    device.queue.writeBuffer(sceneUniformBuffer, 0, mvpMatrix);
   };
 
   `Step 5: Draw`;
@@ -347,10 +341,8 @@ export async function createLine(props) {
     // update camera
     updateCamera(controls);
 
-    // command encoder
-    const commandEncoder = device.createCommandEncoder();
-
     // render pass
+    const commandEncoder = device.createCommandEncoder();
     const renderPass = commandEncoder.beginRenderPass({
       colorAttachments: [
         {
