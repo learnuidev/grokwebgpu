@@ -1,4 +1,4 @@
-(ns webgpu.lessons.genka.basic-scene-renderer
+(ns webgpu.lessons.threed.basic-scene-renderer
   (:require [cljs.repl :refer [doc]]
             ["/lessons/genka/BasicSceneRenderer.js" :as patu :refer [patu Scene Camera WebGPURenderer]]
             ["3d-view-controls" :as camera]

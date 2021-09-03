@@ -1,5 +1,5 @@
-(ns webgpu.lessons.six-buffers
-  (:require ["/lessons/06_buffers.js" :as buffers :refer [makeGlobal createSquare]]
+(ns webgpu.lessons.buffers.six-buffers
+  (:require ["/lessons/02_buffers/06_buffers.js" :as buffers :refer [makeGlobal createSquare]]
             [cljs.repl :refer [doc]]))
 
 (comment

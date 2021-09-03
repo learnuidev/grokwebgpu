@@ -1,4 +1,4 @@
-(ns webgpu.lessons.ten-projection
+(ns webgpu.lessons.camera.ten-projection
   (:require ["gl-matrix" :refer [vec4 mat4]]))
 
 "Lesson 1"

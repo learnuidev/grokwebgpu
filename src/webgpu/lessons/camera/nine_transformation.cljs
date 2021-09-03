@@ -1,4 +1,4 @@
-(ns webgpu.lessons.nine-transformation
+(ns webgpu.lessons.camera.nine-transformation
   (:require ["gl-matrix" :refer [vec4 mat4]]))
 
 (comment "Matrix Helpers")

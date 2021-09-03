@@ -1,5 +1,5 @@
-(ns webgpu.lessons.twelve-texture
-  (:require ["/lessons/12_texture.js" :refer [initTexture]]
+(ns webgpu.lessons.compute.twelve-texture
+  (:require ["/lessons/00_compute/12_texture.js" :refer [initTexture]]
             ["dat.gui" :refer [GUI]]))
 
 ;; Images

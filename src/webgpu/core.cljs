@@ -1,27 +1,68 @@
 (ns webgpu.core
   (:require
-   ; [webgpu.lessons.one-triangle :as one]
-   ; [webgpu.lessons.two-triangle :as two]
-   ; ;; TODO:: lesson 03
-   ; #_["@webgpu/glslang/dist/web-devel-onefile/glslang.js" :as glslang]
-   ; [webgpu.lessons.four-lines :as four]))
-   ; [webgpu.lessons.five-triangle :as five]))
-   ; [webgpu.lessons.six-buffers :as six]))
-   ; [webgpu.lessons.seven-buffer-triangles :as seven]))
-   ; [webgpu.lessons.eight-buffer-one-triangle :as eight]))
-   ; [webgpu.lessons.nine-transformation :as nine]))
-   ; [webgpu.lessons.ten-projection :as ten]
-   ; [webgpu.lessons.ch06.cube-vertex-colors :as eleven]
-   [webgpu.lessons.ch06.line :as twelve]))
-   ; [webgpu.lessons.genka.basic-scene-renderer :as bsr]))
+   ;; Lesson: Basics
+   [webgpu.lessons.basics.one-triangle :as one]
+   [webgpu.lessons.basics.two-triangle :as two]
+   [webgpu.lessons.basics.four-lines :as four]
+   [webgpu.lessons.basics.five-triangle :as five]
+   ;; Lesson:  Buffers
+   [webgpu.lessons.buffers.six-buffers :as six]
+   [webgpu.lessons.buffers.seven-buffer-triangles :as seven]
+   [webgpu.lessons.buffers.eight-buffer-one-triangle :as eight]
+   ;; Lesson: Camera
+   [webgpu.lessons.camera.nine-transformation :as nine]
+   [webgpu.lessons.camera.ten-projection :as ten]
+   ;; Chapter 6
+   [webgpu.lessons.ch06.cube-vertex-colors :as eleven]
+   [webgpu.lessons.ch06.line :as twelve]
+   ;; 3D
+   [webgpu.lessons.threed.basic-scene-renderer :as bsr]
    ;; Computing Examples
-   ; [webgpu.compute.one :as compute]))
-   ; [webgpu.lessons.twelve-texture :as texture]))
+   [webgpu.lessons.compute.twelve-texture :as cone]))
    ;; Book
    ; [webgpu.book.one :as one]))
 
+(def lessons
+  {:basics {:one one/app
+            :two two/app
+            :three four/app
+            :four five/app}
+   :buffers {:one six/app
+             :two seven/app
+             :three eight/app}
+   :camera {:one nine/app
+            :two ten/app}
+   :ch06 {:one eleven/app
+          :two twelve/app}
+   ;; 3d
+   :3d {:one bsr/app}
+   ;; Compute
+   :compute {:one cone/app}})
+
+;; Lessons options
+(def opts
+  #{:basics
+    :buffers
+    :camera
+    :ch06 :3d
+    :compute})
+
+(comment
+  (opts :bassics))
+(defn app
+  ([id] (app id :basics))
+  ([id option]
+   (if (opts option)
+     ((-> lessons option id))
+     (println (str "Should be one of the following: " opts)))))
+
+(comment
+  (app :one)
+  (app :two)
+  (app :four))
+
 (defn ^:dev/after-load start []
-  (twelve/app))
+  (app :two :basics))
 
 (defn ^:export init []
   (start))

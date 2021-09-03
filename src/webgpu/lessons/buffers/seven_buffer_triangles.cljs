@@ -1,5 +1,5 @@
-(ns webgpu.lessons.eight-buffer-one-triangle
-  (:require ["/lessons/08_buffer_one_triangle.js" :as buffers]
+(ns webgpu.lessons.buffers.seven-buffer-triangles
+  (:require ["/lessons/02_buffers/07_buffer_triangle.js" :as buffers]
             [cljs.repl :refer [doc]]))
 
 (comment
