@@ -1,14 +1,11 @@
 const graphicsShader = `
-[[group(0), binding(0)]] var mySampler : sampler;
-[[group(0), binding(1)]] var myTexture : texture_2d<f32>;
-
 struct VertexOutput {
-  [[builtin(position)]] Position : vec4<f32>;
-  [[location(0)]] fragUV : vec2<f32>;
+  [[builtin(position)]] pos: vec4<f32>;
+  [[location(0)]] uv: vec2<f32>;
 };
 
 [[stage(vertex)]]
-fn vert_main([[builtin(vertex_index)]] VertexIndex : u32) -> VertexOutput {
+fn vert_main([[builtin(vertex_index)]] vIndex: u32) -> VertexOutput {
   var pos = array<vec2<f32>, 6>(
       vec2<f32>( 1.0,  1.0),
       vec2<f32>( 1.0, -1.0),
@@ -25,15 +22,19 @@ fn vert_main([[builtin(vertex_index)]] VertexIndex : u32) -> VertexOutput {
       vec2<f32>(0.0, 1.0),
       vec2<f32>(0.0, 0.0));
 
-  var output : VertexOutput;
-  output.Position = vec4<f32>(pos[VertexIndex], 0.0, 1.0);
-  output.fragUV = uv[VertexIndex];
+  var output: VertexOutput;
+  output.pos = vec4<f32>(pos[vIndex], 0.0, 1.0);
+  output.uv = uv[vIndex];
   return output;
 }
 
+
+[[group(0), binding(0)]] var mySampler: sampler;
+[[group(0), binding(1)]] var myTexture: texture_2d<f32>;
+
 [[stage(fragment)]]
-fn frag_main([[location(0)]] fragUV : vec2<f32>) -> [[location(0)]] vec4<f32> {
-  return textureSample(myTexture, mySampler, fragUV);
+fn frag_main(input: VertexOutput) -> [[location(0)]] vec4<f32> {
+  return textureSample(myTexture, mySampler, input.uv);
 }
 `;
 
@@ -43,15 +44,16 @@ const computeShader = `
   blockDim : u32;
 };
 
-[[group(0), binding(0)]] var samp : sampler;
-[[group(0), binding(1)]] var<uniform> params : Params;
-[[group(1), binding(1)]] var inputTex : texture_2d<f32>;
-[[group(1), binding(2)]] var outputTex : texture_storage_2d<rgba8unorm, write>;
+[[group(0), binding(0)]] var samp: sampler;
+[[group(0), binding(1)]] var<uniform> params: Params;
+
+[[group(1), binding(1)]] var inputTex: texture_2d<f32>;
+[[group(1), binding(2)]] var outputTex: texture_storage_2d<rgba8unorm, write>;
 
 [[block]] struct Flip {
   value : u32;
 };
-[[group(1), binding(3)]] var<uniform> flip : Flip;
+[[group(1), binding(3)]] var<uniform> flip: Flip;
 
 // This shader blurs the input texture in one direction, depending on whether
 // |flip.value| is 0 or 1.
@@ -124,7 +126,7 @@ fn main(
 const tileDim = 128;
 const batch = [4, 4];
 
-export const initTexture = async ({ canvas, debug, gui, image }) => {
+export const initBlur = async ({ canvas, debug, gui, image }) => {
   const adapter = await navigator.gpu.requestAdapter();
   const device = await adapter.requestDevice();
 
@@ -401,10 +403,16 @@ export const initTexture = async ({ canvas, debug, gui, image }) => {
     iterations: 2
   };
 
+  const calcBlockDim = filterSize => {
+    return tileDim - (filterSize - 1);
+  };
+
   let blockDim;
   //
   const updateSettings = () => {
-    blockDim = tileDim - (settings.filterSize - 1);
+    blockDim = calcBlockDim(settings.filterSize);
+    window.blockDim = blockDim;
+
     device.queue.writeBuffer(
       blurParamsBuffer,
       0,

@@ -1,5 +1,5 @@
-(ns webgpu.lessons.compute.twelve-texture
-  (:require ["/lessons/00_compute/12_texture.js" :refer [initTexture]]
+(ns webgpu.lessons.compute.twelve-blur
+  (:require ["/lessons/00_compute/12_blur.js" :refer [initBlur]]
             ["dat.gui" :refer [GUI]]))
 
 ;; Images
@@ -14,10 +14,10 @@
 (def state (atom {}))
 ;; app
 (defn app []
-  (.then (initTexture (clj->js {:canvas (js/document.getElementById "app")
-                                :debug true
-                                :gui gui
-                                :image image-url}))
+  (.then (initBlur (clj->js {:canvas (js/document.getElementById "app")
+                             :debug true
+                             :gui gui
+                             :image image-url}))
          (fn [res]
            (js/console.dir res)
            (reset! state res))))

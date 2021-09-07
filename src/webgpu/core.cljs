@@ -18,7 +18,7 @@
    ;; 3D
    [webgpu.lessons.threed.basic-scene-renderer :as bsr]
    ;; Computing Examples
-   [webgpu.lessons.compute.twelve-texture :as cone]))
+   [webgpu.lessons.compute.twelve-blur :as cone]))
    ;; Book
    ; [webgpu.book.one :as one]))
 
@@ -62,7 +62,7 @@
   (app :four))
 
 (defn ^:dev/after-load start []
-  (app :two :basics))
+  (app :one :compute))
 
 (defn ^:export init []
   (start))
